@@ -427,7 +427,7 @@
       if (lvl.interlude) narr(lvl.interlude);
       narr(lvl.brief);
       msgs.push({ kind: 'mission', text: lvl.objective });
-      if (lvl.steps && lvl.steps.length) msgs.push({ kind: 'steps', items: lvl.steps });
+      if (lvl.goal) msgs.push({ kind: 'goal', text: lvl.goal });
       if (lvl.incoming) {
         const inc = lvl.incoming;
         const nm = (window.Comms && window.Comms.CHARS[inc.from] && window.Comms.CHARS[inc.from].name) || inc.from;
@@ -530,9 +530,8 @@
         body.insertAdjacentHTML('beforeend', `<div class="msg msg-mission"><span class="mm-tag">▶ MISSION</span><div class="mm-text">${e(m.text)}</div></div>`);
         this._msgrScroll(); return this._pace(done);
       }
-      if (m.kind === 'steps') {
-        const lis = (m.items || []).map((s, i) => `<li><span class="st-n">${i + 1}</span><span class="st-t">${e(s)}</span></li>`).join('');
-        body.insertAdjacentHTML('beforeend', `<div class="msg msg-steps"><div class="ms-head">▣ 작전 절차 (STEPS)</div><ol class="ms-list">${lis}</ol></div>`);
+      if (m.kind === 'goal') {
+        body.insertAdjacentHTML('beforeend', `<div class="msg msg-goal"><div class="mg-head">🎯 상세 목표</div><div class="mg-text">${e(m.text)}</div></div>`);
         this._msgrScroll(); return this._pace(done);
       }
       if (m.kind === 'out') {
