@@ -1,0 +1,16 @@
+# ── 에디터 / 환경 ──
+.idea/
+.venv/
+.omc/
+__pycache__/
+node_modules/
+
+# ── 개발 전용 (게임 실행에 불필요) ──
+scratchpad/
+imgs/
+quantum_mockup.html
+progress.txt
+
+# ── 스크린샷 / 임시 산출물 ──
+*.png
+.playwright-mcp/
