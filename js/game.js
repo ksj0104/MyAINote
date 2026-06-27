@@ -31,7 +31,8 @@
       try {
         localStorage.setItem(SAVE_KEY, JSON.stringify({
           levelIndex: this.scenarioIndex || 0, theme: this.theme,
-          wargame: [...(this.wargameSolved || [])], codelab: [...(this.codelabSolved || [])]
+          wargame: [...(this.wargameSolved || [])], codelab: [...(this.codelabSolved || [])],
+          academy: [...(this.academyDone || [])]
         }));
       } catch (e) {}
     }
@@ -73,6 +74,7 @@
       this.scenarioIndex = saved && Number.isInteger(saved.levelIndex) ? saved.levelIndex : 0;
       this.wargameSolved = new Set(saved && saved.wargame || []);
       this.codelabSolved = new Set(saved && saved.codelab || []);
+      this.academyDone = new Set(saved && saved.academy || []);
       window.term.bootSequence(() => this.showMenu());
     }
 

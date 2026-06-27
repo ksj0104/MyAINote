@@ -339,6 +339,14 @@ ok('isPractice: 첫 토큰 일치 판정',
 ok('demoFor: EXAMPLES 주석 제거', A.demoFor('ls').indexOf('#') === -1 && A.demoFor('ls').startsWith('ls'));
 ok('demoFor: EXAMPLES 없으면 명령 자체', A.demoFor('pwd') === 'pwd');
 
+// ---------- 시각 학습: 진도 저장/복원 ----------
+game.academyDone = new Set(['ls', 'cd']);
+game.save();
+const savedRaw = JSON.parse(localStorageStub.getItem('terminal_breach_save_v1'));
+ok('save() 가 academyDone 을 직렬화', Array.isArray(savedRaw.academy) && savedRaw.academy.includes('ls') && savedRaw.academy.includes('cd'));
+game.start();
+ok('start() 가 academyDone 을 Set 으로 복원', game.academyDone && typeof game.academyDone.has === 'function' && game.academyDone.has('ls'));
+
 // ---------- 보고 ----------
 console.log(results.join('\n'));
 console.log('\n' + (fail === 0 ? '✅ ALL CHECKS PASS' : '❌ ' + fail + ' FAILED') +
