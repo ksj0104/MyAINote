@@ -693,3 +693,60 @@ body[data-screen="play"] #mission-widget { display: flex; }
 
 @keyframes flashbg { 0% { background: rgba(63,224,234,.18); } 100% { background: var(--void); } }
 
+/* ░░ 시각 학습 오버레이 (ACADEMY) ░░ */
+#academy {
+  display: none; position: fixed; inset: 0; z-index: 100000;
+  background: var(--void); flex-direction: column;
+}
+.acad-head {
+  display: flex; align-items: center; gap: 14px;
+  padding: 8px 14px; border-bottom: 1px solid var(--steel-dim);
+  font-family: 'Chakra Petch'; color: var(--signal);
+}
+.acad-title { font-weight: 700; letter-spacing: 1px; }
+.acad-prog { margin-left: auto; font-family: 'VT323', monospace; color: var(--label); }
+.acad-body { flex: 1; display: flex; min-height: 0; }
+.acad-side {
+  width: 210px; border-right: 1px solid var(--steel-dim); padding: 10px;
+  overflow-y: auto; font-family: 'VT323', monospace; font-size: 16px;
+}
+.acad-side .acad-cat { color: var(--label-dim); margin: 8px 0 2px; }
+.acad-side .acad-li {
+  display: block; width: 100%; text-align: left; background: none; border: none;
+  color: var(--label); padding: 2px 8px; cursor: pointer; font: inherit;
+}
+.acad-side .acad-li.done { color: var(--ok); }
+.acad-side .acad-li.current { color: var(--signal); border-left: 2px solid var(--signal); }
+.acad-side .acad-li.locked { color: var(--label-dim); cursor: not-allowed; }
+.acad-main { flex: 1; display: flex; flex-direction: column; min-width: 0; padding: 12px; gap: 10px; }
+.acad-explain { display: flex; align-items: baseline; gap: 10px; }
+.acad-cmd { font-family: 'Chakra Petch'; font-weight: 700; font-size: 20px; color: var(--signal); }
+.acad-desc { font-family: 'VT323', monospace; font-size: 17px; color: var(--story); }
+.acad-stage {
+  flex: 1; min-height: 0; border: 1px solid var(--signal);
+  background: radial-gradient(circle at 50% 40%, #0c2030, #060a14);
+  border-radius: 6px; overflow: hidden; position: relative;
+  font-family: 'VT323', monospace; color: var(--signal);
+}
+.acad-console { display: flex; flex-direction: column; gap: 6px; }
+.acad-out {
+  height: 96px; overflow-y: auto; background: #000; border: 1px solid var(--steel-dim);
+  padding: 6px 8px; font-family: 'VT323', monospace; font-size: 15px;
+  color: var(--label); white-space: pre-wrap;
+}
+.acad-cmdline { display: flex; align-items: center; gap: 8px; }
+.acad-prompt { font-family: 'VT323', monospace; color: var(--ok); white-space: nowrap; }
+.acad-input {
+  flex: 1; background: #000; border: 1px solid var(--steel-dim); color: var(--signal-soft);
+  font-family: 'VT323', monospace; font-size: 16px; padding: 6px 8px;
+}
+.acad-next {
+  background: var(--signal); color: var(--void); border: none; padding: 7px 16px;
+  cursor: pointer; font-family: 'Chakra Petch'; font-weight: 700; letter-spacing: 1px;
+}
+.acad-out .echo { color: var(--label-dim); }
+.acad-out .ok { color: var(--ok); }
+body[data-overlay="academy"] #window-layer,
+body[data-overlay="academy"] #mission-widget,
+body[data-overlay="academy"] #desk-icons { visibility: hidden; }
+

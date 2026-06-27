@@ -97,6 +97,35 @@
           </div>
         </div>
       </div>
+
+      <!-- 시각 학습 오버레이 (ACADEMY) -->
+      <div id="academy">
+        <div class="acad-head">
+          <span class="acad-title">◈ ACADEMY</span>
+          <span id="acad-prog" class="acad-prog">0 / 0</span>
+          <button class="hud-btn" onclick="window.game.showMenu()">✕ 메뉴</button>
+        </div>
+        <div class="acad-body">
+          <nav id="acad-side" class="acad-side"></nav>
+          <section class="acad-main">
+            <div class="acad-explain">
+              <span id="acad-cmd" class="acad-cmd">--</span>
+              <span id="acad-desc" class="acad-desc"></span>
+            </div>
+            <div id="acad-stage" class="acad-stage"></div>
+            <div class="acad-console">
+              <div id="acad-out" class="acad-out"></div>
+              <div class="acad-cmdline">
+                <span id="acad-prompt" class="acad-prompt">student@academy:~$</span>
+                <input id="acad-input" class="acad-input" type="text" autocomplete="off"
+                       autocapitalize="off" autocorrect="off" spellcheck="false"
+                       placeholder="여기에 명령을 직접 입력하고 Enter…" />
+                <button id="acad-next" class="acad-next" hidden>다음 ▶</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
     </div>
 
     <!-- ░░ 작업표시줄 ░░ -->
@@ -140,6 +169,8 @@
   <script src="js/apps/terminal-app.js"></script>
   <script src="js/apps/messenger.js"></script>
   <script src="js/apps/browser.js"></script>
+  <script src="js/os/academy-viz.js"></script>
+  <script src="js/apps/academy.js"></script>
   <script src="js/os/shell.js"></script>
 </body>
 </html>
