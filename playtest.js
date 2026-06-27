@@ -322,6 +322,41 @@ game.appMode = 'scenario'; game.activeSet = win.LEVELS;
 try { game.loadLevel(win.LEVELS.length); ended = true; } catch (e) {}  // index >= length → showEnding (term stubbed)
 ok('Scenario past last level reaches ending without error', ended);
 
+// ---------- 시각 학습: 데이터/게이팅 ----------
+const A = win.Academy;
+ok('Academy.order 는 비어있지 않고 모두 COMMANDS 에 존재',
+  Array.isArray(A.order) && A.order.length > 0 && A.order.every(c => win.COMMANDS[c]),
+  'order=' + (A.order && A.order.length));
+ok('Academy.order 에 중복 없음', new Set(A.order).size === A.order.length);
+ok('order 의 모든 명령이 familyOf 로 패밀리를 가짐', A.order.every(c => typeof A.familyOf(c) === 'string'));
+ok('familyOf 매핑 검증',
+  A.familyOf('nmap') === 'net' && A.familyOf('find') === 'fs' && A.familyOf('xor') === 'crypto'
+  && A.familyOf('hydra') === 'crack' && A.familyOf('aircrack-ng') === 'wifi' && A.familyOf('whoami') === 'light');
+ok('Academy.categories 는 [name,cmds][] 이고 cmds 는 COMMANDS 부분집합',
+  Array.isArray(A.categories) && A.categories.length > 0 && A.categories.every(([n, cs]) => typeof n === 'string' && cs.every(c => win.COMMANDS[c])));
+ok('isPractice: 첫 토큰 일치 판정',
+  A.isPractice('nmap 10.0.0.0/24', 'nmap') === true && A.isPractice('ls -la', 'nmap') === false && A.isPractice('  ', 'ls') === false);
+ok('demoFor: EXAMPLES 주석 제거', A.demoFor('ls').indexOf('#') === -1 && A.demoFor('ls').startsWith('ls'));
+ok('demoFor: EXAMPLES 없으면 명령 자체', A.demoFor('pwd') === 'pwd');
+
+// ---------- 시각 학습: 진도 저장/복원 ----------
+game.academyDone = new Set(['ls', 'cd']);
+game.save();
+const savedRaw = JSON.parse(localStorageStub.getItem('terminal_breach_save_v1'));
+ok('save() 가 academyDone 을 직렬화', Array.isArray(savedRaw.academy) && savedRaw.academy.includes('ls') && savedRaw.academy.includes('cd'));
+game.start();
+ok('start() 가 academyDone 을 Set 으로 복원', game.academyDone && typeof game.academyDone.has === 'function' && game.academyDone.has('ls'));
+
+// ---------- 시각 학습: enter 위임/폴백 ----------
+win.Academy.enter(game);
+ok('AcademyUI 없을 때 enter 는 샌드박스를 셋업(폴백)', game.user === 'student' && game.cwd === '/home/student' && !!game.fs);
+let opened = null;
+win.AcademyUI = { open: (g) => { opened = g; } };
+win.Academy.enter(game);
+ok('AcademyUI 있을 때 enter 는 AcademyUI.open 으로 위임', opened === game);
+ok('위임해도 샌드박스 상태는 여전히 셋업됨', game.user === 'student' && !!game.fs);
+delete win.AcademyUI;
+
 // ---------- 보고 ----------
 console.log(results.join('\n'));
 console.log('\n' + (fail === 0 ? '✅ ALL CHECKS PASS' : '❌ ' + fail + ' FAILED') +

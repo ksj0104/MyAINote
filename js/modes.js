@@ -39,6 +39,18 @@
     ['게임·진행', ['submit', 'save', 'load', 'saves']]
   ];
 
+  // 명령 → 시각화 패밀리 (5 정교; 그 외는 familyOf 가 'light' 폴백)
+  const VIZ_FAMILY = {
+    ls: 'fs', cd: 'fs', pwd: 'fs', cat: 'fs', echo: 'fs', grep: 'fs', find: 'fs',
+    mkdir: 'fs', touch: 'fs', cp: 'fs', mv: 'fs', rm: 'fs',
+    ifconfig: 'net', ping: 'net', nmap: 'net', netstat: 'net', arp: 'net', route: 'net',
+    ssh: 'net', scp: 'net', wget: 'net', curl: 'net', exit: 'net', disconnect: 'net',
+    base64: 'crypto', rot13: 'crypto', caesar: 'crypto', xor: 'crypto', vigenere: 'crypto',
+    md5sum: 'crypto', strings: 'crypto', xxd: 'crypto',
+    hydra: 'crack', john: 'crack', hashcat: 'crack', dump: 'crack',
+    'airmon-ng': 'wifi', 'airodump-ng': 'wifi', 'aireplay-ng': 'wifi', 'aircrack-ng': 'wifi'
+  };
+
   // 명령별 학습 예제 (없으면 usage로 대체)
   const EXAMPLES = {
     ls: 'ls -la /etc        # 숨김파일·권한까지 상세히',
@@ -112,6 +124,28 @@
   };
 
   const Academy = {
+    // 학습 순서: CATEGORIES 평탄화 → COMMANDS 에 존재하는 것만(실행 가능), 중복 제거
+    get order() {
+      const C = window.COMMANDS || {};
+      const seen = new Set(), out = [];
+      for (const [, cmds] of CATEGORIES) for (const c of cmds) {
+        if (!seen.has(c) && C[c]) { seen.add(c); out.push(c); }
+      }
+      return out;
+    },
+    // 사이드바 그룹: [카테고리명, COMMANDS에 있는 명령들][]
+    get categories() {
+      const C = window.COMMANDS || {};
+      return CATEGORIES.map(([name, cmds]) => [name, cmds.filter(c => C[c])]).filter(([, cs]) => cs.length);
+    },
+    VIZ_FAMILY,
+    familyOf(cmd) { return VIZ_FAMILY[cmd] || 'light'; },
+    demoFor(cmd) { const ex = EXAMPLES[cmd]; return ex ? ex.split('#')[0].trim() : cmd; },
+    isPractice(raw, target) {
+      const first = String(raw || '').trim().split(/\s+/)[0].toLowerCase();
+      return !!first && first === String(target || '').toLowerCase();
+    },
+
     enter(game) {
       // 자유 연습용 샌드박스
       game.user = 'student'; game.host = 'academy'; game.cwd = '/home/student';
@@ -143,6 +177,10 @@
       t.println('', '');
       t.println('그 외 모든 명령(ls, cat, grep, nmap, base64 ...)은 바로 실습된다.', 'dim');
       window.term.setMission({ id: 'ACADEMY', tier: '학습', title: '명령어 연습실', objective: 'lessons / learn <명령> 으로 학습하고 자유롭게 실습하라' }, 1, 1);
+      // 브라우저: 시각 학습 오버레이로 위임. 샌드박스 상태는 위에서 이미 셋업됨.
+      if (window.AcademyUI && typeof window.AcademyUI.open === 'function') {
+        window.AcademyUI.open(game);
+      }
     },
 
     handle(raw, game) {

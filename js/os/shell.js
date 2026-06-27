@@ -242,8 +242,14 @@
       Desktop.renderWidget(); const a = T(); if (a) a.updatePrompt();
       if (window.Browser) Browser.refresh(); if (window.Messenger) Messenger.renderContacts();
     },
-    hideOverlays() { Desktop.hideModals(); const cl = $('#codelab'); if (cl) cl.style.display = 'none'; document.body.removeAttribute('data-overlay'); },
+    hideOverlays() {
+      Desktop.hideModals();
+      const cl = $('#codelab'); if (cl) cl.style.display = 'none';
+      const ac = $('#academy'); if (ac) ac.style.display = 'none';
+      document.body.removeAttribute('data-overlay');
+    },
     showCodelab() { const cl = $('#codelab'); if (cl) cl.style.display = 'flex'; document.body.setAttribute('data-overlay', 'codelab'); },
+    showAcademy() { const ac = $('#academy'); if (ac) ac.style.display = 'flex'; document.body.setAttribute('data-overlay', 'academy'); },
     bootSequence(done) { Boot.run(done); },
     showMenu(game) { Desktop.showLauncher(game); },
     showModesMenu(game) { Desktop.showModes(game); },
