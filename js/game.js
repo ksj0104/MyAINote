@@ -325,7 +325,7 @@
     }
 
     /* ---------- 명령 실행 ---------- */
-    exec(raw, isSub) {
+    exec(raw, isSub, stdin) {
       raw = (raw || '').trim();
       if (!raw) return '';
       if (!isSub) this.history.push(raw);
@@ -342,6 +342,14 @@
           const r = window.Academy.handle(raw, this);
           if (r !== null && r !== undefined) return r;   // null이면 아래로 떨어져 샌드박스에서 실행
         }
+      }
+
+      const pipeParts = this.splitTopLevel(raw, '|');
+      if (pipeParts.length > 1) {
+        let pipe = stdin || '';
+        for (const part of pipeParts) pipe = this.exec(part.trim(), true, pipe);
+        if (!isSub) this.checkLevel();
+        return pipe == null ? '' : String(pipe);
       }
 
       // 게임 메타 명령 (시나리오/워게임/아카데미 공통)
@@ -370,7 +378,7 @@
         tokens = tokens.slice(0, ri);
       }
       const name = tokens[0];
-      const args = tokens.slice(1);
+      const args = this.expandGlobs(tokens.slice(1));
       const cmd = window.COMMANDS[name];
       let out;
       if (!cmd) {
@@ -381,7 +389,7 @@
           else { this.ranScripts = this.ranScripts || new Set(); this.ranScripts.add(this.fs.basename(name)); out = sn.content; }
         } else out = `${name}: command not found  (\`help\` 로 명령 목록 확인)`;
       }
-      else { try { out = cmd.run({ args, game: this, raw }); } catch (e) { out = `${name}: 실행 오류: ${e.message}`; } }
+      else { try { out = cmd.run({ args, game: this, raw, stdin: stdin || '' }); } catch (e) { out = `${name}: 실행 오류: ${e.message}`; } }
 
       if (redirect) {
         const abs = this.fs.resolve(redirect.path, this.cwd);
@@ -395,10 +403,87 @@
     }
 
     tokenize(s) {
-      const re = /"([^"]*)"|'([^']*)'|(\S+)/g;
-      const out = []; let m;
-      while ((m = re.exec(s)) !== null) out.push(m[1] !== undefined ? m[1] : m[2] !== undefined ? m[2] : m[3]);
+      const out = [];
+      let cur = '', quote = null, esc = false;
+      for (const ch of String(s)) {
+        if (esc) { cur += ch; esc = false; continue; }
+        if (ch === '\\' && quote !== "'") { esc = true; continue; }
+        if (quote) {
+          if (ch === quote) quote = null;
+          else cur += ch;
+          continue;
+        }
+        if (ch === '"' || ch === "'") { quote = ch; continue; }
+        if (/\s/.test(ch)) {
+          if (cur !== '') { out.push(cur); cur = ''; }
+          continue;
+        }
+        cur += ch;
+      }
+      if (cur !== '') out.push(cur);
       return out;
+    }
+
+    splitTopLevel(s, sep) {
+      const parts = [];
+      let cur = '', quote = null, esc = false;
+      for (const ch of String(s)) {
+        if (esc) { cur += ch; esc = false; continue; }
+        if (ch === '\\' && quote !== "'") { cur += ch; esc = true; continue; }
+        if (quote) {
+          if (ch === quote) quote = null;
+          cur += ch;
+          continue;
+        }
+        if (ch === '"' || ch === "'") { quote = ch; cur += ch; continue; }
+        if (ch === sep) { parts.push(cur); cur = ''; continue; }
+        cur += ch;
+      }
+      parts.push(cur);
+      return parts.filter(p => p.trim() !== '');
+    }
+
+    expandGlobs(args) {
+      const expanded = [];
+      for (const a of args) {
+        if (!/[*?[]/.test(a) || /^[a-z]+:\/\//i.test(a)) { expanded.push(a); continue; }
+        const matches = this.glob(a);
+        expanded.push.apply(expanded, matches.length ? matches : [a]);
+      }
+      return expanded;
+    }
+
+    glob(pattern) {
+      const fs = this.fs;
+      if (!fs) return [];
+      let p = pattern;
+      if (p === '~' || p.startsWith('~/') || /^~[^/]+/.test(p)) p = fs.resolve(p, this.cwd);
+      const parts = (p.startsWith('/') ? p : this.cwd + '/' + p).split('/');
+      const norm = [];
+      for (const part of parts) {
+        if (!part || part === '.') continue;
+        if (part === '..') norm.pop();
+        else norm.push(part);
+      }
+      const globRe = (s) => s.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
+      const walk = (node, idx, abs) => {
+        if (!node) return [];
+        if (idx >= norm.length) return [abs || '/'];
+        const seg = norm[idx];
+        if (node.type !== 'dir') return [];
+        if (!/[*?[]/.test(seg)) {
+          const child = node.children[seg];
+          return walk(child, idx + 1, (abs === '/' ? '' : abs) + '/' + seg);
+        }
+        const re = new RegExp('^' + globRe(seg) + '$');
+        let out = [];
+        for (const name of Object.keys(node.children).sort()) {
+          if (!seg.startsWith('.') && name.startsWith('.')) continue;
+          if (re.test(name)) out = out.concat(walk(node.children[name], idx + 1, (abs === '/' ? '' : abs) + '/' + name));
+        }
+        return out;
+      };
+      return walk(fs.root, 0, '/');
     }
 
     checkLevel() {

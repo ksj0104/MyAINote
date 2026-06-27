@@ -20,7 +20,12 @@ class FileSystem {
     if (path == null || path === '') path = '.';
     let parts;
     if (path === '~' || path.startsWith('~/')) {
-      path = '/home/guest' + path.slice(1);
+      const m = String(cwd || '').match(/^\/home\/([^/]+)/);
+      const home = m ? '/home/' + m[1] : '/home/guest';
+      path = home + path.slice(1);
+    } else if (/^~[^/]+/.test(path)) {
+      const m = path.match(/^~([^/]+)(.*)$/);
+      path = (m[1] === 'root' ? '/root' : '/home/' + m[1]) + (m[2] || '');
     }
     if (path.startsWith('/')) {
       parts = path.split('/');

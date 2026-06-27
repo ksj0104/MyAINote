@@ -34,6 +34,11 @@ const OPTS = {
   base64: [['-d', '디코딩(없으면 인코딩)'], ['<text|file>', '대상 문자열 또는 파일']],
   strings: [['<file>', '4글자 이상 ASCII 문자열만 추출할 파일']],
   xxd: [['<file>', '16진수+ASCII로 덤프할 파일(최대 256바이트)']],
+  head: [['-n <N>', '앞에서 N줄 출력(기본 10줄)'], ['[file]', '대상 파일. 생략하면 표준입력']],
+  tail: [['-n <N>', '뒤에서 N줄 출력(기본 10줄)'], ['[file]', '대상 파일. 생략하면 표준입력']],
+  wc: [['-l', '줄 수'], ['-w', '단어 수'], ['-c', '바이트/문자 수'], ['[file]', '대상 파일. 생략하면 표준입력']],
+  sort: [['[file]', '대상 파일. 생략하면 표준입력']],
+  uniq: [['[file]', '연속 중복 줄 제거. 생략하면 표준입력']],
   ps: [['(인자 없음)', '실행 중 프로세스 목록(PID/USER/COMMAND)']],
   uname: [['-a', '커널·호스트·아키텍처 전체 정보']],
   clear: [['(인자 없음)', '화면(출력 영역)을 비운다']],
@@ -161,8 +166,8 @@ reg('cd', '디렉터리 이동', 'cd <path>', ({ args, game }) => {
   return '';
 });
 
-reg('cat', '파일 내용 출력', 'cat <file>', ({ args, game }) => {
-  if (!args[0]) return 'cat: missing file operand';
+reg('cat', '파일 내용 출력', 'cat <file>', ({ args, game, stdin }) => {
+  if (!args[0]) return stdin || 'cat: missing file operand';
   const out = [];
   for (const a of args) {
     const abs = game.fs.resolve(a, game.cwd);
@@ -178,12 +183,12 @@ reg('cat', '파일 내용 출력', 'cat <file>', ({ args, game }) => {
 
 reg('echo', '문자열 출력', 'echo <text>', ({ args }) => args.join(' ').replace(/^["']|["']$/g, ''));
 
-reg('grep', '패턴 검색', 'grep <pattern> <file>', ({ args, game }) => {
+reg('grep', '패턴 검색', 'grep <pattern> <file>', ({ args, game, stdin }) => {
   const flags = args.filter(a => a.startsWith('-')).join('');
   const rest = args.filter(a => !a.startsWith('-'));
   const pattern = (rest[0] || '').replace(/^["']|["']$/g, '');
   const fileArg = rest[1];
-  if (!pattern || !fileArg) return 'usage: grep [-i|-r] <pattern> <file>';
+  if (!pattern) return 'usage: grep [-i|-r] <pattern> <file>';
   const re = new RegExp(pattern, (flags.includes('i') ? 'i' : '') + (flags.includes('o') ? 'g' : ''));
   const matchInFile = (node, label) => {
     if (!game.fs.canRead(node, game.user)) return [];
@@ -192,6 +197,12 @@ reg('grep', '패턴 검색', 'grep <pattern> <file>', ({ args, game }) => {
     if (flags.includes('o')) { const r = []; ls.forEach(l => { const mm = l.match(re); if (mm) r.push.apply(r, mm); }); return r; }
     return ls.filter(l => re.test(l)).map(l => flags.includes('r') ? `${label}: ${l}` : l);
   };
+  if (!fileArg && stdin != null && stdin !== '') {
+    const ls = String(stdin).split('\n');
+    if (flags.includes('o')) { const r = []; ls.forEach(l => { const mm = l.match(re); if (mm) r.push.apply(r, mm); }); return r.join('\n'); }
+    return ls.filter(l => re.test(l)).join('\n');
+  }
+  if (!fileArg) return 'usage: grep [-i|-r] <pattern> <file>';
   const abs = game.fs.resolve(fileArg, game.cwd);
   const node = game.fs.getNode(abs);
   if (!node) return `grep: ${fileArg}: No such file or directory`;
@@ -280,10 +291,10 @@ reg('sudo', '관리자 권한 실행', 'sudo <cmd>', ({ args, game, raw }) => {
 reg('passwd', '비밀번호(시뮬)', 'passwd', () => 'passwd: 이 시뮬레이터에서는 비밀번호를 변경할 수 없습니다.');
 
 /* ---------- 인코딩/분석 ---------- */
-reg('base64', 'base64 인코딩/디코딩', 'base64 [-d] <text|file>', ({ args, game }) => {
+reg('base64', 'base64 인코딩/디코딩', 'base64 [-d] <text|file>', ({ args, game, stdin }) => {
   const dec = args.includes('-d');
   const rest = args.filter(a => a !== '-d');
-  let data = rest.join(' ');
+  let data = rest.length ? rest.join(' ') : (stdin || '');
   const abs = game.fs.resolve(data, game.cwd);
   const node = game.fs.getNode(abs);
   if (node && node.type === 'file') data = node.content;
@@ -313,6 +324,64 @@ reg('xxd', '16진수 덤프(시뮬)', 'xxd <file>', ({ args, game }) => {
     out += `${i.toString(16).padStart(8, '0')}: ${pad(hex, 48)} ${chunk.replace(/[^\x20-\x7e]/g, '.')}\n`;
   }
   return out.trim();
+});
+
+function readTextInput(args, game, stdin, label) {
+  const fileArg = (args || []).filter(a => !a.startsWith('-'))[0];
+  if (!fileArg) return { text: stdin || '', name: '' };
+  const abs = game.fs.resolve(fileArg, game.cwd);
+  const node = game.fs.getNode(abs);
+  if (!node || node.type !== 'file') return { err: `${label}: cannot open '${fileArg}' for reading: No such file or directory` };
+  if (!game.fs.canRead(node, game.user)) return { err: `${label}: ${fileArg}: Permission denied` };
+  game.readFiles && game.readFiles.add(abs);
+  return { text: node.content || '', name: fileArg };
+}
+
+function nArg(args, def) {
+  const i = args.indexOf('-n');
+  if (i >= 0 && /^\d+$/.test(args[i + 1] || '')) return parseInt(args[i + 1], 10);
+  const short = args.find(a => /^-\d+$/.test(a));
+  return short ? parseInt(short.slice(1), 10) : def;
+}
+
+reg('head', '앞부분 출력', 'head [-n N] [file]', ({ args, game, stdin }) => {
+  const src = readTextInput(args.filter((a, i) => !(a === '-n' || args[i - 1] === '-n' || /^-\d+$/.test(a))), game, stdin, 'head');
+  if (src.err) return src.err;
+  return src.text.split('\n').slice(0, nArg(args, 10)).join('\n');
+});
+
+reg('tail', '끝부분 출력', 'tail [-n N] [file]', ({ args, game, stdin }) => {
+  const src = readTextInput(args.filter((a, i) => !(a === '-n' || args[i - 1] === '-n' || /^-\d+$/.test(a))), game, stdin, 'tail');
+  if (src.err) return src.err;
+  const n = nArg(args, 10);
+  return src.text.split('\n').slice(-n).join('\n');
+});
+
+reg('wc', '줄/단어/문자 수 계산', 'wc [-l|-w|-c] [file]', ({ args, game, stdin }) => {
+  const src = readTextInput(args, game, stdin, 'wc');
+  if (src.err) return src.err;
+  const text = src.text;
+  const flags = args.filter(a => a.startsWith('-')).join('');
+  const counts = [];
+  const wantAny = flags.includes('l') || flags.includes('w') || flags.includes('c');
+  if (!wantAny || flags.includes('l')) counts.push(String(text ? text.split('\n').length : 0).padStart(7));
+  if (!wantAny || flags.includes('w')) counts.push(String((text.trim().match(/\S+/g) || []).length).padStart(7));
+  if (!wantAny || flags.includes('c')) counts.push(String(text.length).padStart(7));
+  return counts.join('') + (src.name ? ' ' + src.name : '');
+});
+
+reg('sort', '줄 정렬', 'sort [file]', ({ args, game, stdin }) => {
+  const src = readTextInput(args, game, stdin, 'sort');
+  if (src.err) return src.err;
+  return src.text.split('\n').sort((a, b) => a.localeCompare(b)).join('\n');
+});
+
+reg('uniq', '연속 중복 줄 제거', 'uniq [file]', ({ args, game, stdin }) => {
+  const src = readTextInput(args, game, stdin, 'uniq');
+  if (src.err) return src.err;
+  const out = [];
+  for (const line of src.text.split('\n')) if (!out.length || out[out.length - 1] !== line) out.push(line);
+  return out.join('\n');
 });
 
 /* ---------- 프로세스/시스템 ---------- */

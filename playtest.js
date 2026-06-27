@@ -154,6 +154,18 @@ for (const ln of ['echo hi > a.txt', 'cat a.txt', 'grep -i hi a.txt', 'strings w
 }
 ok('Academy file commands run without error', acadOk, acadErr);
 
+// ---------- 실제 셸에 가까운 공통 문법: 파이프/glob/stdin/~ ----------
+win.Academy.enter(game);
+game.exec('echo alpha > a.txt');
+game.exec('echo beta >> a.txt');
+game.exec('echo alpha > b.txt');
+ok('Shell pipe: cat file | grep pattern', game.exec('cat a.txt | grep beta') === 'beta');
+ok('Shell glob: cat *.txt expands matching files', game.exec('cat *.txt | grep alpha | wc -l').trim() === '2');
+ok('Shell stdin filters: head reads pipeline input', game.exec('cat a.txt | head -n 1') === 'alpha');
+game.exec('cd /tmp');
+game.exec('cd ~');
+ok('Shell home expansion follows current user', game.cwd === '/home/student');
+
 // ---------- STANCE 분기(성향): 같은 목표, 다른 길 ----------
 function playStance(i, lines) {
   game.appMode = 'scenario'; game.activeSet = win.LEVELS; game.levelIndex = i; game.scenarioIndex = i;

