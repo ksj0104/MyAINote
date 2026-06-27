@@ -187,7 +187,7 @@ body[data-screen="play"] #nav-rail { display: flex; }
 .nav-ico.nav-bottom { margin-top: auto; }
 
 /* 스토리/미션 창 */
-#story-panel { display: none; flex: 0 1 auto; max-height: 44%; }
+#story-panel { display: none; flex: 0 0 56%; min-height: 0; }   /* 고정 높이(키움): 보안 채널 */
 #story-panel.show { display: flex; }
 .sp-headbar {
   display: flex; justify-content: space-between; align-items: center;
@@ -266,6 +266,10 @@ body[data-screen="play"] #nav-rail { display: flex; }
 .caret-block { color: var(--signal); animation: blink 1s steps(1) infinite; }
 .cmd-hint { font-family: 'Chakra Petch', sans-serif; font-size: 11px; letter-spacing: .5px; color: var(--label-dim); white-space: nowrap; }
 .cmd-hint b { color: var(--label); font-weight: 600; }
+/* 보안 채널 수신 중 — 명령 바 잠금 표시 */
+#command-bar.locked { opacity: .55; filter: saturate(.5); }
+#command-bar.locked .cmd-arrow, #command-bar.locked .caret-block { animation: none; opacity: .3; }
+#command-bar.locked .prompt { color: var(--label-dim); text-shadow: none; }
 
 /* ============================================================
  * 모드별 패널 표시

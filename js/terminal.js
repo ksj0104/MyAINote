@@ -184,6 +184,8 @@
     _bindInput() {
       this.inputEl.addEventListener('keydown', (e) => {
         const g = window.game;
+        // 보안 채널이 미션을 전송하는 동안엔 터미널 잠금. Enter 로 남은 대화 즉시 표시(스킵).
+        if (this.inputLocked) { e.preventDefault(); if (e.key === 'Enter') this._msgrFlush(); return; }
         // 메뉴 화면에서는 방향키로 선택 이동 + Enter 로 실행 (입력창이 비어있을 때)
         if (g.appMode === 'menu' && this.handleMenuKey(e)) return;
         if (e.key === 'Enter') {
@@ -408,8 +410,8 @@
     /* ---------- 스토리/미션 창 (위쪽 패널) ---------- */
     _esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
     // 미션 진입 시 메신저로 브리핑 전달 (0xMOTHER/WRAITH 메시지 + 미션 카드 + 타이핑)
-    renderStory(lvl, tag) {
-      const sp = $('#story-panel'); if (!sp) return;
+    renderStory(lvl, tag, onDone) {
+      const sp = $('#story-panel'); if (!sp) { if (onDone) onDone(); return; }
       this._msgrReset();
       const mid = $('#story-mid'); if (mid) mid.textContent = `${lvl.id} · ${lvl.tier}`;
       sp.classList.add('show');
@@ -432,7 +434,7 @@
         (inc.lines || []).forEach(l => msgs.push({ kind: 'in', who: inc.from, name: nm, text: l }));
         if (inc.foot) msgs.push({ kind: 'system', text: inc.foot });
       }
-      this._msgrEnqueue(msgs);
+      this._msgrEnqueue(msgs, onDone);
     }
     // 클리어 시 완료/디브리핑을 메신저에 덧붙임
     appendStory(banner, successTxt) {
@@ -458,34 +460,71 @@
     /* ----- 메신저 큐 엔진 (순차 전송 + 타이핑) ----- */
     _msgrReset() {
       if (this._mqTimer) { clearTimeout(this._mqTimer); this._mqTimer = null; }
-      this._mq = []; this._mqBusy = false;
+      this._mq = []; this._mqBusy = false; this._mqDone = null; this._activeBubble = null;
       const b = $('#story-body'); if (b) b.innerHTML = '';
     }
-    _msgrEnqueue(items) { this._mq = (this._mq || []).concat(items); this._msgrPump(); }
+    _msgrEnqueue(items, onDone) {
+      this._mq = (this._mq || []).concat(items);
+      if (onDone) this._mqDone = onDone;
+      this._msgrPump();
+    }
     _msgrScroll() {
       const b = $('#story-body'); if (b) b.scrollTop = b.scrollHeight;   // 실제 스크롤 컨테이너
       const sp = $('#story-panel'); if (sp) sp.scrollTop = sp.scrollHeight;
     }
     _msgrPump() {
       if (this._mqBusy) return;
-      const m = (this._mq || []).shift(); if (!m) return;
+      const m = (this._mq || []).shift();
+      if (!m) {                                   // 큐가 비면 = 모든 대화 전송 완료 → 드레인 콜백
+        if (this._mqDone) { const fn = this._mqDone; this._mqDone = null; fn(); }
+        return;
+      }
       this._mqBusy = true;
       this._msgrRender(m, () => { this._mqBusy = false; this._msgrPump(); });
     }
+    // 진행 중인 모든 대화를 즉시 끝까지 표시(Enter 스킵)
+    _msgrFlush() {
+      if (this._mqTimer) { clearTimeout(this._mqTimer); this._mqTimer = null; }
+      if (this._activeBubble) { this._activeBubble.textContent = this._activeText || ''; this._activeBubble = null; }
+      this._mqBusy = false;
+      const q = this._mq || []; this._mq = [];
+      const a = this.animate; this.animate = false;               // 즉시(동기) 렌더
+      q.forEach(m => this._msgrRender(m, () => {}));
+      this.animate = a;
+      this._msgrScroll();
+      if (this._mqDone) { const fn = this._mqDone; this._mqDone = null; fn(); }
+    }
+    // 미션 전환: 터미널 초기화 + 입력 잠금 (보안 채널 수신 동안)
+    lockTerminal() {
+      this.inputLocked = true;
+      this.clear();
+      if (this.inputEl) { this.inputEl.disabled = true; this.inputEl.placeholder = '◉ 보안 채널 수신 중…  (Enter: 건너뛰기)'; }
+      const cb = document.getElementById('command-bar'); if (cb) cb.classList.add('locked');
+    }
+    // 보안 채널 전송 완료 → 터미널 활성화
+    unlockTerminal() {
+      this.inputLocked = false;
+      if (this.inputEl) { this.inputEl.disabled = false; this.inputEl.placeholder = '명령을 입력하고 Enter…'; }
+      const cb = document.getElementById('command-bar'); if (cb) cb.classList.remove('locked');
+      this.println('[ 터미널 활성화 ] 위 STORY 창의 미션을 확인하고 명령을 입력하라.', 'success');
+      if (this.inputEl) this.inputEl.focus();
+    }
+    // 비-타이핑 메시지도 한 박자씩 끊어 순차로 보이게(미션 전환 몰입)
+    _pace(done) { if (!this.animate) return done(); this._mqTimer = setTimeout(done, 240); }
     _msgrRender(m, done) {
       const body = $('#story-body'); if (!body) return done();
       const e = (s) => this._esc(s);
       if (m.kind === 'system' || m.kind === 'done') {
         body.insertAdjacentHTML('beforeend', `<div class="msg msg-system${m.kind === 'done' ? ' complete' : ''}">${e(m.text)}</div>`);
-        this._msgrScroll(); return done();
+        this._msgrScroll(); return this._pace(done);
       }
       if (m.kind === 'mission') {
         body.insertAdjacentHTML('beforeend', `<div class="msg msg-mission"><span class="mm-tag">▶ MISSION</span><div class="mm-text">${e(m.text)}</div></div>`);
-        this._msgrScroll(); return done();
+        this._msgrScroll(); return this._pace(done);
       }
       if (m.kind === 'out') {
         body.insertAdjacentHTML('beforeend', `<div class="msg msg-out"><div class="bubble">${e(m.text)}</div></div>`);
-        this._msgrScroll(); return done();
+        this._msgrScroll(); return this._pace(done);
       }
       // incoming (in / wraith): 타이핑 인디케이터 → 글자 타이핑
       const wrap = document.createElement('div');
@@ -495,6 +534,7 @@
       const bubble = wrap.querySelector('.bubble');
       const text = m.text || '';
       if (!this.animate || !text) { bubble.textContent = text; this._msgrScroll(); return done(); }
+      this._activeBubble = bubble; this._activeText = text;   // 스킵(Enter) 시 즉시 완성용
       bubble.innerHTML = '<span class="typing"><i></i><i></i><i></i></span>';
       this._msgrScroll();
       this._mqTimer = setTimeout(() => {
@@ -505,7 +545,7 @@
           this._msgrScroll();
           if (i % 6 === 0) this._blip(860 + (i % 3) * 40, 0.006, 0.02);
           if (i < text.length) this._mqTimer = setTimeout(step, 26);   // 26ms/틱
-          else done();
+          else { this._activeBubble = null; done(); }
         };
         step();
       }, 360);                                  // 타이핑 인디케이터 좀 더 길게

@@ -229,13 +229,12 @@
       const mode = lvl.mode || ({ '기초': 'terminal', '중급': 'recon', '고급': 'os', '실전': 'os' }[lvl.tier] || 'terminal');
       document.body.setAttribute('data-screen', 'play');
       t.setMode(mode);
-      // 스토리(막간극·브리핑·목표·접선)는 위쪽 스토리 창에 표시(터미널과 분리)
-      t.renderStory(lvl, tag);
       // 접선 상대 등록은 게임 로직(렌더와 무관하게 보장)
       if (lvl.incoming && window.Comms) window.Comms.register(this, lvl.incoming.from);
-      // 터미널에는 간단한 진입 표시만
-      t.println(`[ ${tag} ${lvl.id} · ${lvl.title} ] 위쪽 STORY/MISSION 창에서 브리핑을 확인하라.`, 'dim');
       this.updateMission(lvl);
+      // 미션 전환: 터미널 초기화 + 잠금 → 보안 채널로 브리핑 순차 전송 → 다 뜨면 터미널 활성화
+      if (t.lockTerminal) t.lockTerminal();
+      t.renderStory(lvl, tag, () => { if (t.unlockTerminal) t.unlockTerminal(); });
     }
 
     loadLevel(index) {
