@@ -177,6 +177,10 @@
       t.println('', '');
       t.println('그 외 모든 명령(ls, cat, grep, nmap, base64 ...)은 바로 실습된다.', 'dim');
       window.term.setMission({ id: 'ACADEMY', tier: '학습', title: '명령어 연습실', objective: 'lessons / learn <명령> 으로 학습하고 자유롭게 실습하라' }, 1, 1);
+      // 브라우저: 시각 학습 오버레이로 위임. 샌드박스 상태는 위에서 이미 셋업됨.
+      if (window.AcademyUI && typeof window.AcademyUI.open === 'function') {
+        window.AcademyUI.open(game);
+      }
     },
 
     handle(raw, game) {

@@ -347,6 +347,16 @@ ok('save() 가 academyDone 을 직렬화', Array.isArray(savedRaw.academy) && sa
 game.start();
 ok('start() 가 academyDone 을 Set 으로 복원', game.academyDone && typeof game.academyDone.has === 'function' && game.academyDone.has('ls'));
 
+// ---------- 시각 학습: enter 위임/폴백 ----------
+win.Academy.enter(game);
+ok('AcademyUI 없을 때 enter 는 샌드박스를 셋업(폴백)', game.user === 'student' && game.cwd === '/home/student' && !!game.fs);
+let opened = null;
+win.AcademyUI = { open: (g) => { opened = g; } };
+win.Academy.enter(game);
+ok('AcademyUI 있을 때 enter 는 AcademyUI.open 으로 위임', opened === game);
+ok('위임해도 샌드박스 상태는 여전히 셋업됨', game.user === 'student' && !!game.fs);
+delete win.AcademyUI;
+
 // ---------- 보고 ----------
 console.log(results.join('\n'));
 console.log('\n' + (fail === 0 ? '✅ ALL CHECKS PASS' : '❌ ' + fail + ' FAILED') +
