@@ -185,6 +185,130 @@
         }
         ft.innerHTML = `<div class="fst-path">${g.cwd}</div>` + (items || '<div class="panel-empty">(빈 디렉터리)</div>');
       }
+
+      this.renderTools();
+    }
+
+    /* ---------- 툴 독 (네트워크 / DB 인젝션 / 파일 / 설정) ---------- */
+    selectTool(name) {
+      this.activeTool = name;
+      this._syncToolNav(name);
+      this.renderTools(true);
+      if (this.inputEl) this.inputEl.focus();
+    }
+    _syncToolNav(name) {
+      document.body.setAttribute('data-tool', name);
+      document.querySelectorAll('#nav-rail .nav-ico[data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === name));
+      const heads = { dashboard: '◈ 작전 대시보드', network: '◢ 네트워크 스캐너', database: '⛁ DB 인젝션', files: '▤ 파일 탐색기', settings: '⚙ 설정' };
+      const h = $('#tool-head'); if (h) h.textContent = heads[name] || name;
+    }
+    // 툴 버튼 → 명령 실행(터미널에 직접 입력한 것과 동일 경로)
+    runToolCmd(cmd) {
+      const g = window.game;
+      if (this.inputLocked || !cmd) return;
+      this.println(this.promptString() + ' ' + cmd, 'cmd-echo');
+      this._blip(660, 0.03);
+      const out = g.exec(cmd);
+      if (out) this.typeBlock(out);
+      this.updatePrompt();
+      this.renderPanels();
+    }
+    toolScan(flag) {
+      const el = $('#net-target');
+      const g = window.game;
+      const target = (el && el.value.trim()) || (g.network && g.network[0] && (g.network[0].name || g.network[0].ip)) || '';
+      if (!target) { this.printBlock('대상을 입력하세요 (호스트 또는 대역).', 'dim'); return; }
+      this.runToolCmd('nmap ' + (flag ? flag + ' ' : '') + target);
+    }
+    toolSubmit() { const el = $('#tool-submit'); if (el && el.value.trim()) { const v = el.value.trim(); el.value = ''; this.runToolCmd('submit ' + v); } }
+    toolInject() { const el = $('#db-payload'); const v = (el && el.value.trim()) || "' OR '1'='1' --"; this.runToolCmd('login admin "' + v + '"'); }
+    toolPreset(kind) {
+      if (kind === 'bypass') this.runToolCmd('login admin "\' OR \'1\'=\'1\' --"');
+      else if (kind === 'union') this.runToolCmd('login admin "\' UNION SELECT null,user,pass FROM users --"');
+    }
+    toolFile(name, isDir) { this.runToolCmd((isDir ? 'cd ' : 'cat ') + name); }
+    toggleSound() { const b = $('#sound-toggle'); if (b) b.click(); }
+
+    renderTools(force) {
+      const g = window.game;
+      if (!g || !g.fs || document.body.getAttribute('data-screen') !== 'play') return;
+      if (!document.body.getAttribute('data-tool')) this._syncToolNav('dashboard');
+      const e = s => this._esc(s);
+      const set = g.activeSet || window.LEVELS;
+      const lvl = set && set[g.levelIndex];
+
+      // 대시보드: 미션 목표 + 정답 제출 + 길잡이
+      const dash = $('#tool-dashboard');
+      if (dash) {
+        dash.innerHTML =
+          `<div class="tool-card"><div class="tc-k">현재 미션</div><div class="tc-v">${lvl ? e(lvl.id + ' · ' + lvl.title) : '—'}</div></div>` +
+          `<div class="tool-card"><div class="tc-k">목표</div><div class="tc-v">${e(lvl ? lvl.objective : '—')}</div></div>` +
+          `<div class="tool-section"><label class="tool-label">정답 제출 (submit)</label>` +
+          `<div class="tool-row"><input id="tool-submit" class="tool-input" placeholder="찾은 값 입력 후 Enter" onkeydown="if(event.key==='Enter')window.term.toolSubmit()" /><button class="tool-btn" onclick="window.term.toolSubmit()">제출</button></div></div>` +
+          `<div class="tool-section"><label class="tool-label">길잡이</label>` +
+          `<button class="tool-btn ghost" onclick="window.term.runToolCmd('objective')">목표 다시 보기</button>` +
+          `<button class="tool-btn ghost" onclick="window.term.runToolCmd('hint')">힌트 받기</button>` +
+          `<button class="tool-btn ghost" onclick="window.term.runToolCmd('intel')">작전 정보 (intel)</button></div>`;
+      }
+
+      // 네트워크: 발견 호스트별 접속 동작
+      const nt = $('#net-target');
+      if (nt && !nt.value && g.network && g.network[0]) nt.value = g.network[0].name || g.network[0].ip || '';
+      const na = $('#net-actions');
+      if (na) {
+        const hosts = (g.network || []).filter(h => g.scanned && g.scanned.has(h.ip));
+        na.innerHTML = hosts.map(h => {
+          const svc = (h.ports || []).map(p => p.service);
+          const acts = [];
+          if (svc.includes('http')) acts.push(`<button class="tool-btn ghost" onclick="window.term.runToolCmd('curl http://${e(h.name)}')">HTTP 요청 (curl)</button>`);
+          if (svc.includes('ftp')) acts.push(`<button class="tool-btn ghost" onclick="window.term.runToolCmd('ftp ${e(h.ip)}')">FTP 접속</button>`);
+          if (svc.includes('ssh')) acts.push(`<button class="tool-btn ghost" onclick="window.term.runToolCmd('ssh ${e(h.ip)}')">SSH 접속</button>`);
+          return acts.length ? `<div class="net-act"><div class="net-host-h">▣ ${e(h.name)} · ${e(h.ip)}</div>${acts.join('')}</div>` : '';
+        }).join('') || '<div class="tool-hint">스캔하면 접속 가능한 서비스가 여기 표시됩니다.</div>';
+      }
+
+      // 파일 탐색기: 현재 디렉터리 클릭 탐색/열람
+      const fv = $('#tool-files');
+      if (fv) {
+        const node = g.fs.getNode(g.cwd);
+        let rows = `<div class="tool-card"><div class="tc-k">현재 경로</div><div class="tc-v">${e(g.cwd)}</div></div>` +
+          `<div class="tool-row"><button class="tool-btn ghost" onclick="window.term.runToolCmd('cd ..')">⬆ 상위 (cd ..)</button><button class="tool-btn ghost" onclick="window.term.runToolCmd('ls -a')">숨김 포함 (ls -a)</button></div>`;
+        if (node && node.type === 'dir') {
+          const entries = Object.values(node.children).sort((a, b) => a.name.localeCompare(b.name));
+          rows += '<div class="tool-divider">항목 (클릭하여 열기)</div>';
+          rows += entries.map(en => {
+            const isDir = en.type === 'dir';
+            const nm = String(en.name).replace(/['\\]/g, '\\$&');
+            return `<div class="tfile ${isDir ? 'dir' : ''}" onclick="window.term.toolFile('${nm}', ${isDir})"><span class="tf-ic">${isDir ? '▸' : '·'}</span> ${e(en.name)}${isDir ? '/' : ''}</div>`;
+          }).join('');
+        }
+        fv.innerHTML = rows;
+      }
+
+      // DB 인젝션 / 설정: 입력 보존 위해 비어있을 때(또는 force)만 렌더
+      const db = $('#tool-database');
+      if (db && (force || !db.innerHTML)) {
+        db.innerHTML =
+          `<div class="tool-card"><div class="tc-k">대상 로그인</div><div class="tc-v">admin @ /admin_portal</div></div>` +
+          `<div class="tool-section"><label class="tool-label">프리셋 페이로드</label>` +
+          `<button class="tool-btn ghost" onclick="window.term.toolPreset('bypass')">인증 우회 ( ' OR '1'='1' -- )</button>` +
+          `<button class="tool-btn ghost" onclick="window.term.toolPreset('union')">테이블 덤프 (UNION SELECT)</button></div>` +
+          `<div class="tool-section"><label class="tool-label">직접 페이로드 주입</label>` +
+          `<textarea id="db-payload" class="tool-area" placeholder="' OR '1'='1' --"></textarea>` +
+          `<button class="tool-btn wide" onclick="window.term.toolInject()">주입 실행 ▶</button>` +
+          `<div class="tool-hint">입력값이 admin 계정 인증 쿼리에 그대로 주입됩니다.</div></div>`;
+      }
+      const sv = $('#tool-settings');
+      if (sv && (force || !sv.innerHTML)) {
+        sv.innerHTML =
+          `<div class="tool-section"><label class="tool-label">화면 색상 테마</label>` +
+          `<div class="tool-row"><button class="tool-btn ghost" onclick="window.game.setTheme('amber')">앰버</button><button class="tool-btn ghost" onclick="window.game.setTheme('green')">그린</button><button class="tool-btn ghost" onclick="window.game.setTheme('cyan')">시안</button></div></div>` +
+          `<div class="tool-section"><label class="tool-label">사운드</label><button class="tool-btn ghost" onclick="window.term.toggleSound()">효과음 켜기 / 끄기</button></div>` +
+          `<div class="tool-section"><label class="tool-label">작전</label>` +
+          `<button class="tool-btn ghost" onclick="window.term.runToolCmd('levels')">진행 현황 (levels)</button>` +
+          `<button class="tool-btn ghost" onclick="window.term.runToolCmd('restart')">처음부터 (restart)</button>` +
+          `<button class="tool-btn ghost" onclick="window.game.showMenu()">메인 메뉴로</button></div>`;
+      }
     }
 
     /* ---------- 입력 처리 ---------- */

@@ -69,11 +69,12 @@
               <circle cx="29.5" cy="24" r="1.7" fill="var(--void)"/>
             </svg>
           </div>
-          <button class="nav-ico active" title="미션 대시보드">◈</button>
-          <button class="nav-ico" title="네트워크">◢</button>
-          <button class="nav-ico" title="익스플로잇">⚡</button>
-          <button class="nav-ico" title="로그">▤</button>
-          <button class="nav-ico nav-bottom" title="메뉴" onclick="window.game.showMenu()">⚙</button>
+          <button class="nav-ico active" data-tool="dashboard" title="작전 대시보드" onclick="window.term.selectTool('dashboard')">◈</button>
+          <button class="nav-ico" data-tool="network" title="네트워크 스캐너" onclick="window.term.selectTool('network')">◢</button>
+          <button class="nav-ico" data-tool="database" title="DB 인젝션" onclick="window.term.selectTool('database')">⛁</button>
+          <button class="nav-ico" data-tool="files" title="파일 탐색기" onclick="window.term.selectTool('files')">▤</button>
+          <button class="nav-ico" data-tool="settings" title="설정" onclick="window.term.selectTool('settings')">⚙</button>
+          <button class="nav-ico nav-bottom" title="메뉴" onclick="window.game.showMenu()">⌂</button>
         </nav>
 
         <aside id="fstree-panel" class="panel side-panel">
@@ -98,9 +99,27 @@
           </main>
         </div>
 
-        <aside id="targets-panel" class="panel side-panel">
-          <div class="panel-head">◢ NETWORK MAP</div>
-          <div id="targets-list" class="panel-body"></div>
+        <aside id="tool-dock" class="panel side-panel">
+          <div class="panel-head" id="tool-head">◈ 작전 대시보드</div>
+          <div id="tool-views" class="panel-body">
+            <div class="tool-view" data-view="dashboard"><div id="tool-dashboard"></div></div>
+            <div class="tool-view" data-view="network">
+              <div class="tool-section">
+                <label class="tool-label">대상 (호스트 / 대역)</label>
+                <div class="tool-row">
+                  <input id="net-target" class="tool-input" placeholder="예: dev-test.helios.corp" />
+                  <button class="tool-btn" onclick="window.term.toolScan()">스캔 ▶</button>
+                </div>
+                <div class="tool-row"><button class="tool-btn ghost" onclick="window.term.toolScan('-sV')">버전 스캔 (nmap -sV)</button></div>
+              </div>
+              <div class="tool-divider">발견된 노드</div>
+              <div id="targets-list"></div>
+              <div id="net-actions"></div>
+            </div>
+            <div class="tool-view" data-view="database"><div id="tool-database"></div></div>
+            <div class="tool-view" data-view="files"><div id="tool-files"></div></div>
+            <div class="tool-view" data-view="settings"><div id="tool-settings"></div></div>
+          </div>
         </aside>
       </div>
 

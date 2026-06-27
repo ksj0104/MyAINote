@@ -186,6 +186,51 @@ body[data-screen="play"] #nav-rail { display: flex; }
 .nav-ico.active { color: var(--signal); border-color: var(--signal); background: rgba(63,224,234,0.08); }
 .nav-ico.nav-bottom { margin-top: auto; }
 
+/* ============================================================
+ * 툴 독 (네트워크/DB/파일/설정) — 나브로 전환
+ * ============================================================ */
+#tool-dock { width: 330px; }
+#tool-views { padding: 0; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.tool-view { display: none; flex: 1; overflow-y: auto; padding: 11px 12px; flex-direction: column; gap: 10px; }
+body[data-tool="dashboard"] .tool-view[data-view="dashboard"],
+body[data-tool="network"]   .tool-view[data-view="network"],
+body[data-tool="database"]  .tool-view[data-view="database"],
+body[data-tool="files"]     .tool-view[data-view="files"],
+body[data-tool="settings"]  .tool-view[data-view="settings"] { display: flex; }
+/* 기본(미설정) = 대시보드 */
+body[data-screen="play"]:not([data-tool]) .tool-view[data-view="dashboard"] { display: flex; }
+
+.tool-section { display: flex; flex-direction: column; gap: 7px; }
+.tool-label { font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: var(--label-dim); }
+.tool-row { display: flex; gap: 6px; align-items: stretch; }
+.tool-input, .tool-area {
+  flex: 1; min-width: 0; background: var(--void); border: 1px solid var(--steel-dim); color: var(--signal-soft);
+  font-family: 'VT323', monospace; font-size: 16px; padding: 6px 8px; outline: none;
+}
+.tool-input:focus, .tool-area:focus { border-color: var(--signal); }
+.tool-area { resize: vertical; min-height: 46px; width: 100%; }
+.tool-btn {
+  font-family: 'Chakra Petch', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: .5px;
+  background: var(--signal); color: var(--void); border: none; padding: 7px 10px; cursor: pointer; white-space: nowrap;
+}
+.tool-btn:hover { filter: brightness(1.15); }
+.tool-btn.ghost { background: transparent; color: var(--signal); border: 1px solid var(--steel); width: 100%; }
+.tool-btn.ghost:hover { border-color: var(--signal); background: rgba(63,224,234,.08); }
+.tool-btn.wide { width: 100%; }
+.tool-divider { font-family: 'Chakra Petch', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2px;
+  color: var(--label-dim); border-top: 1px solid var(--steel-dim); padding-top: 8px; margin-top: 2px; }
+.tool-hint { font-size: 13px; line-height: 1.4; color: var(--label-dim); font-family: 'VT323', monospace; }
+.tool-card { border: 1px solid var(--steel-dim); border-left: 3px solid var(--signal); background: rgba(63,224,234,.04); padding: 8px 10px; }
+.tool-card .tc-k { font-family: 'Chakra Petch', sans-serif; font-size: 9px; letter-spacing: 1.5px; color: var(--label-dim); }
+.tool-card .tc-v { color: var(--objective); font-family: 'VT323', monospace; font-size: 16px; margin-top: 2px; word-break: break-all; }
+/* 파일 탐색기 항목 */
+.tfile { display: flex; align-items: center; gap: 7px; padding: 4px 6px; cursor: pointer; font-family: 'VT323', monospace; font-size: 16px; color: var(--label); border: 1px solid transparent; }
+.tfile:hover { border-color: var(--steel-dim); background: rgba(63,224,234,.05); color: var(--signal); }
+.tfile .tf-ic { color: var(--signal); width: 12px; text-align: center; }
+.tfile.dir .tf-ic { color: var(--objective); }
+.net-act { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
+.net-host-h { font-family: 'VT323', monospace; font-size: 15px; color: var(--signal-soft); }
+
 /* 스토리/미션 창 */
 #story-panel { display: none; flex: 0 0 56%; min-height: 0; }   /* 고정 높이(키움): 보안 채널 */
 #story-panel.show { display: flex; }
@@ -278,11 +323,12 @@ body[data-screen="play"] #nav-rail { display: flex; }
 /* ============================================================
  * 모드별 패널 표시
  * ============================================================ */
-body[data-mode="recon"] #targets-panel,
 body[data-mode="recon"] #status-bar,
-body[data-mode="os"] #targets-panel,
-body[data-mode="os"] #fstree-panel { display: flex; }
+body[data-mode="os"] #fstree-panel,
 body[data-mode="os"] #status-bar { display: flex; }
+/* 툴 독은 플레이 중 항상 표시(나브로 전환) */
+body[data-screen="play"] #tool-dock { display: flex; }
+body[data-screen="menu"] #tool-dock { display: none; }
 
 /* ============================================================
  * 네트워크 맵
