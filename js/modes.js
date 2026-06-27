@@ -182,7 +182,9 @@
       const opts = window.COMMAND_OPTS && window.COMMAND_OPTS[name];
       if (opts && opts.length) {
         out += `│ 옵션 :\n`;
-        for (const [tok, d] of opts) out += `│    ${String(tok).padEnd(16)} ${d}\n`;
+        for (const [tok, d] of opts) out += `│    ${String(tok).padEnd(18)} ${d}\n`;
+        out += `│    ${'─'.repeat(18)}\n`;
+        out += `│    ★ = 이 시뮬레이터에서 동작 · 그 외는 실제 유닉스 기준 설명(학습용)\n`;
       }
       out += `╰───────────────────────────────────────\n`;
       out += `직접 해보기 → 연습실에서 \`${name}\` 를 입력해보라.`;

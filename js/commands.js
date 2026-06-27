@@ -15,96 +15,189 @@ function pad(s, n) { s = String(s); return s + ' '.repeat(Math.max(0, n - s.leng
 function bar(pct, width) { width = width || 20; const n = Math.round(pct / 100 * width); return '[' + '▓'.repeat(n) + '░'.repeat(width - n) + '] ' + pct + '%'; }
 
 /* 명령별 옵션/인자 상세 설명 — [토큰, 설명] 목록. man / learn 에서 OPTIONS 섹션으로 렌더 */
+// 각 명령의 옵션/인자 상세. [토큰, 설명]. ★ = 이 시뮬레이터에서 실제 동작하는 핵심 옵션,
+// 그 외는 실제 유닉스 기준 개념 설명(학습용). man/learn 출력에 그대로 표시된다.
 const OPTS = {
   help: [['(인자 없음)', '등록된 모든 명령을 정렬해 5열로 나열한다']],
-  man: [['<cmd>', '매뉴얼을 볼 명령 이름']],
-  pwd: [['(인자 없음)', '현재 작업 디렉터리의 절대경로를 출력']],
-  ls: [['-l', '권한·소유자·크기까지 상세(long) 표시'], ['-a', '점(.)으로 시작하는 숨김 파일까지 표시'], ['[path]', '나열할 경로(생략 시 현재 디렉터리)']],
-  cd: [['<path>', '이동할 경로'], ['~', '홈 디렉터리(/home/<user>)'], ['..', '상위 디렉터리'], ['.', '현재 디렉터리']],
-  cat: [['<file...>', '내용을 출력할 파일(여러 개 가능, 순서대로 이어 출력)']],
-  echo: [['<text>', '출력할 문자열(앞뒤 따옴표는 제거됨)'], ['> <file>', '출력을 파일에 덮어쓰기(리다이렉션)'], ['>> <file>', '출력을 파일 끝에 추가']],
-  grep: [['-i', '대소문자 무시'], ['-r', '디렉터리를 재귀 검색(결과에 파일명 표시)'], ['<pattern>', '찾을 문자열 또는 정규식'], ['<file>', '검색 대상 파일(또는 -r과 함께 디렉터리)']],
-  find: [['[path]', '탐색을 시작할 경로(생략 시 현재)'], ['-name <pat>', '이름 패턴(*, ? 와일드카드 가능)']],
-  chmod: [['<octal>', '3자리 8진수 권한(r=4,w=2,x=1 합). 예: 644, 755'], ['<file>', '권한을 바꿀 대상']],
+  man: [['<cmd>', '매뉴얼을 볼 명령 이름'], ['(예) man grep', 'grep 의 사용법·옵션을 본다']],
+  pwd: [['(인자 없음)', '현재 작업 디렉터리(print working directory)의 절대경로 출력']],
+  ls: [
+    ['-l', '★ 권한·소유자·크기·날짜까지 상세(long) 표시'],
+    ['-a', '★ 점(.)으로 시작하는 숨김 파일까지 표시(all)'],
+    ['-la / -al', '★ 두 옵션을 합쳐서 사용(상세 + 숨김)'],
+    ['-h', '크기를 사람이 읽기 쉬운 단위(K/M/G)로 (-l과 함께)'],
+    ['-R', '하위 디렉터리까지 재귀적으로 나열'],
+    ['-t', '수정 시간 순 정렬(최신 먼저)'],
+    ['-S', '파일 크기 순 정렬'],
+    ['-r', '정렬을 역순으로'],
+    ['[path]', '나열할 경로(생략 시 현재 디렉터리)']
+  ],
+  cd: [['<path>', '이동할 경로'], ['~', '홈 디렉터리(/home/<user>)'], ['..', '상위 디렉터리'], ['.', '현재 디렉터리'], ['-', '직전 디렉터리로 토글']],
+  cat: [['<file...>', '내용을 출력할 파일(여러 개면 순서대로 이어 출력)'], ['-n', '각 줄 앞에 줄 번호를 붙여 출력']],
+  echo: [['<text>', '출력할 문자열(앞뒤 따옴표는 제거됨)'], ['> <file>', '★ 출력을 파일에 덮어쓰기(리다이렉션)'], ['>> <file>', '★ 출력을 파일 끝에 추가'], ['-n', '끝에 줄바꿈을 넣지 않음']],
+  grep: [
+    ['<pattern>', '★ 찾을 문자열 또는 정규식(regex)'],
+    ['<file>', '★ 검색 대상 파일(-r과 함께면 디렉터리)'],
+    ['-i', '★ 대소문자 무시(ignore-case)'],
+    ['-r / -R', '★ 디렉터리를 재귀(recursive) 검색, 결과에 파일명 표시'],
+    ['-o', '★ 매칭된 *부분만* 출력(only-matching)'],
+    ['-E', '★ 확장 정규식 사용(+, ?, | 등). egrep 과 동일'],
+    ['-n', '매칭된 줄의 줄 번호를 함께 표시(line-number)'],
+    ['-v', '패턴과 *일치하지 않는* 줄만 출력(invert)'],
+    ['-c', '매칭된 줄의 개수만 출력(count)'],
+    ['-l', '매칭이 있는 파일 이름만 출력(files-with-matches)'],
+    ['-w', '단어 단위로 정확히 일치(word)'],
+    ['-A/-B/-C <N>', '매칭 줄의 뒤(After)/앞(Before)/양쪽(Context) N줄도 함께']
+  ],
+  find: [
+    ['[path]', '★ 탐색을 시작할 경로(생략 시 현재)'],
+    ['-name <pat>', '★ 이름 패턴(*, ? 와일드카드). 대소문자 구분'],
+    ['-iname <pat>', '이름 패턴(대소문자 무시)'],
+    ['-perm <mode>', '★ 권한으로 검색. -4000 = SUID 비트 설정된 것'],
+    ['-type <f|d>', '종류로 필터(f=파일, d=디렉터리)'],
+    ['-size <n>', '크기로 필터(예: +1M = 1MB 초과)'],
+    ['-mtime <n>', '수정 시각으로 필터(일 단위)'],
+    ['-exec <cmd> {} \\;', '찾은 각 항목에 명령 실행({}=경로 치환)'],
+    ['2>/dev/null', '권한 거부 오류 메시지를 버림(자주 함께 씀)']
+  ],
+  chmod: [
+    ['<octal> <file>', '★ 8진수 권한(r=4,w=2,x=1 합). 예: 644, 755, 600'],
+    ['+x / -x', '★ 실행 권한 추가/제거(기호 모드)'],
+    ['+r / +w', '읽기/쓰기 권한 추가'],
+    ['u/g/o/a', '대상: u=소유자 g=그룹 o=기타 a=전체. 예: chmod u+x'],
+    ['-R', '디렉터리 내부까지 재귀 적용'],
+    ['<file>', '권한을 바꿀 대상 파일/디렉터리']
+  ],
   whoami: [['(인자 없음)', '현재 로그인 사용자명 출력']],
-  id: [['(인자 없음)', 'uid/gid/그룹 정보 출력']],
-  su: [['[user]', '전환할 사용자(기본 root)'], ['[password]', '대상 비밀번호(게임에선 인자로 직접 입력)']],
-  sudo: [['<cmd>', 'root 권한으로 실행할 명령(sudo 허용 시스템에서만)']],
+  id: [['(인자 없음)', 'uid/gid/소속 그룹 정보 출력'], ['-u', '숫자 uid만'], ['-un', '사용자 이름만']],
+  su: [['[user]', '전환할 사용자(기본 root)'], ['-', '대상 사용자의 환경까지 로드(로그인 셸)'], ['[password]', '대상 비밀번호(게임에선 인자로 직접 입력)']],
+  sudo: [['<cmd>', 'root 권한으로 실행할 명령(sudo 허용 시)'], ['-l', '현재 사용자가 sudo로 쓸 수 있는 명령 목록'], ['-u <user>', '지정 사용자 권한으로 실행']],
   passwd: [['(시뮬)', '이 시뮬레이터에선 비밀번호를 바꿀 수 없음']],
-  base64: [['-d', '디코딩(없으면 인코딩)'], ['<text|file>', '대상 문자열 또는 파일']],
-  strings: [['<file>', '4글자 이상 ASCII 문자열만 추출할 파일']],
-  xxd: [['<file>', '16진수+ASCII로 덤프할 파일(최대 256바이트)']],
-  head: [['-n <N>', '앞에서 N줄 출력(기본 10줄)'], ['[file]', '대상 파일. 생략하면 표준입력']],
-  tail: [['-n <N>', '뒤에서 N줄 출력(기본 10줄)'], ['[file]', '대상 파일. 생략하면 표준입력']],
-  wc: [['-l', '줄 수'], ['-w', '단어 수'], ['-c', '바이트/문자 수'], ['[file]', '대상 파일. 생략하면 표준입력']],
-  sort: [['[file]', '대상 파일. 생략하면 표준입력']],
-  uniq: [['[file]', '연속 중복 줄 제거. 생략하면 표준입력']],
-  ps: [['(인자 없음)', '실행 중 프로세스 목록(PID/USER/COMMAND)']],
-  uname: [['-a', '커널·호스트·아키텍처 전체 정보']],
+  base64: [['<text|file>', '★ 대상 문자열 또는 파일'], ['-d', '★ 디코딩(decode). 없으면 인코딩(encode)'], ['-w <N>', '출력을 N자마다 줄바꿈(-w 0 = 줄바꿈 없음)']],
+  strings: [['<file>', '★ 출력할 파일'], ['-n <N>', '최소 길이 N자 이상인 ASCII 문자열만(기본 4)'], ['-t x', '각 문자열의 파일 내 오프셋도 표시']],
+  xxd: [['<file>', '★ 16진수+ASCII로 덤프할 파일'], ['-l <len>', '앞에서 len 바이트만'], ['-s <off>', 'off 바이트부터 시작'], ['-p', '순수 16진수만(plain)']],
+  head: [['[file]', '★ 대상 파일(생략 시 표준입력)'], ['-n <N>', '★ 앞에서 N줄 출력(기본 10)'], ['-c <N>', '앞에서 N바이트 출력']],
+  tail: [['[file]', '★ 대상 파일(생략 시 표준입력)'], ['-n <N>', '★ 뒤에서 N줄 출력(기본 10)'], ['-c <N>', '뒤에서 N바이트'], ['-f', '파일에 추가되는 내용을 실시간 추적(follow)']],
+  wc: [['[file]', '★ 대상 파일(생략 시 표준입력)'], ['-l', '★ 줄 수(lines)'], ['-w', '★ 단어 수(words)'], ['-c', '★ 바이트 수'], ['-m', '문자 수']],
+  sort: [['[file]', '★ 대상 파일(생략 시 표준입력)'], ['-n', '숫자로 정렬(numeric)'], ['-r', '역순(reverse)'], ['-u', '중복 제거(unique)'], ['-k <N>', 'N번째 필드 기준 정렬']],
+  uniq: [['[file]', '★ 연속 중복 줄 제거(생략 시 표준입력)'], ['-c', '각 줄의 반복 횟수도 표시'], ['-d', '중복된 줄만 출력']],
+  ps: [['(인자 없음)', '★ 실행 중 프로세스 목록(PID/USER/COMMAND)'], ['aux', '모든 사용자의 모든 프로세스 상세(BSD 형식)'], ['-ef', '모든 프로세스 + 부모 PID(System V 형식)']],
+  uname: [['-a', '★ 커널·호스트·아키텍처 전체 정보(all)'], ['-r', '커널 릴리스 버전만'], ['-s', '커널 이름만']],
   clear: [['(인자 없음)', '화면(출력 영역)을 비운다']],
   history: [['(인자 없음)', '입력했던 명령 히스토리 출력']],
-  ifconfig: [['(인자 없음)', 'eth0 인터페이스/IP/MAC 정보']],
-  ping: [['<host>', '응답을 확인할 호스트 IP 또는 이름']],
-  nmap: [['-sV', '서비스 버전까지 탐지(version detection)'], ['<host>', '단일 대상 IP/이름'], ['<subnet>', '대역 스캔(예: 10.0.0.0/24) — 살아있는 호스트 전체']],
-  netstat: [['-tlnp', 'TCP/리슨/숫자/프로그램 표시(연결·리슨 포트 목록)']],
-  ssh: [['<user>@<host>', '접속할 계정@호스트'], ['[password]', '비밀번호(게임에선 명령 뒤에 인자로 입력)']],
-  john: [['<hashfile>', '크랙할 해시가 담긴 파일(사전 공격)']],
+  ifconfig: [['(인자 없음)', 'eth0 인터페이스/IP/MAC 정보'], ['<iface>', '특정 인터페이스만 표시']],
+  ping: [['<host>', '★ 응답을 확인할 호스트 IP 또는 이름'], ['-c <N>', 'N번만 보내고 종료(count)']],
+  nmap: [
+    ['<host>', '★ 단일 대상 IP/이름'],
+    ['<subnet>', '★ 대역 스캔(예: 10.0.0.0/24) — 살아있는 호스트 전체'],
+    ['-sV', '★ 서비스 버전까지 탐지(version detection)'],
+    ['-p <ports>', '특정 포트만(예: -p 22,80 / -p- 전체)'],
+    ['-sS', 'SYN(스텔스) 스캔 — 흔적이 적음'],
+    ['-Pn', '핑 생략하고 바로 포트 스캔(방화벽 대비)'],
+    ['-O', '운영체제(OS) 추정'],
+    ['-A', '공격적: 버전+OS+스크립트 한꺼번에'],
+    ['-T4', '스캔 속도(0=느림~5=빠름)']
+  ],
+  netstat: [['-tlnp', '★ TCP/리슨/숫자/프로그램(연결·리슨 포트 목록)'], ['-a', '모든 소켓(연결+리슨)'], ['-t/-u', 'TCP / UDP 만'], ['-l', '리슨(LISTEN) 중인 것만'], ['-n', '이름 대신 숫자로'], ['-p', '소켓을 연 프로그램/PID']],
+  ssh: [
+    ['<user>@<host>', '★ 접속할 계정@호스트'],
+    ['[password]', '★ 비밀번호(게임에선 명령 뒤 인자로 입력)'],
+    ['-L <l>:<h>:<r>', '★ 로컬 포트 포워딩(터널). 내 l 포트 → 원격 h:r'],
+    ['-p <port>', '접속 포트 지정(기본 22)'],
+    ['-i <keyfile>', '비밀번호 대신 개인키 파일로 인증'],
+    ['-D <port>', '동적(SOCKS) 프록시 터널'],
+    ['-N', '명령 실행 없이 터널만 유지']
+  ],
+  john: [['<hashfile>', '★ 크랙할 해시 파일'], ['--wordlist=<f>', '★ 사용할 사전 파일(예: rockyou.txt)'], ['--show', '이미 크랙된 결과 다시 표시'], ['--format=<t>', '해시 종류 지정(md5/sha 등)']],
   exit: [['(인자 없음)', '원격 접속을 종료하고 이전 호스트로 복귀']],
   disconnect: [['(인자 없음)', '현재 원격 접속을 종료']],
-  submit: [['<flag>', '제출할 플래그/정답. flag{...} 전체 또는 안쪽만 가능']],
+  submit: [['<flag>', '★ 제출할 플래그/정답. flag{...} 전체 또는 안쪽만 가능']],
   save: [['[슬롯]', '저장 슬롯 이름(기본 quick)']],
   load: [['[슬롯]', '불러올 저장 슬롯 이름(기본 quick)']],
   saves: [['(인자 없음)', '저장된 슬롯 목록 표시']],
-  mkdir: [['<dir>', '생성할 디렉터리 경로']],
-  touch: [['<file>', '생성할 빈 파일(이미 있으면 변화 없음)']],
-  rm: [['-r', '디렉터리를 재귀적으로 삭제'], ['<path>', '삭제할 파일/디렉터리(여러 개 가능)']],
-  cp: [['<src>', '원본 파일'], ['<dst>', '복사 대상 경로(디렉터리면 그 안에 복사)']],
-  mv: [['<src>', '원본 파일'], ['<dst>', '이동/이름변경 대상 경로']],
-  scp: [['<src>', '원격/로컬 원본(user@host:/path 형식의 경로부만 사용)'], ['<dst>', '저장 위치(탈취로 기록됨)']],
-  export: [['KEY=VAL', '환경변수 설정(따옴표 제거)']],
+  mkdir: [['<dir>', '★ 생성할 디렉터리 경로'], ['-p', '중간 경로까지 한꺼번에 생성(부모 포함)']],
+  touch: [['<file>', '★ 빈 파일 생성(있으면 수정시각 갱신)'], ['-t <stamp>', '★ 수정 시각을 지정(YYYYMMDDhhmm) — 타임스톰핑']],
+  rm: [['<path>', '★ 삭제할 파일/디렉터리(여러 개 가능)'], ['-r', '★ 디렉터리를 재귀적으로 삭제(recursive)'], ['-f', '★ 확인 없이 강제 삭제(force)'], ['-rf', '★ 폴더 통째로 강제 삭제(주의)'], ['-i', '삭제 전 하나씩 확인']],
+  cp: [['<src> <dst>', '★ 원본 → 대상으로 복사'], ['-r', '디렉터리 통째로 복사(재귀)'], ['-p', '권한·시간 등 속성 보존']],
+  mv: [['<src> <dst>', '★ 이동 또는 이름 변경'], ['-f', '대상이 있어도 덮어쓰기']],
+  scp: [['<src> <dst>', '★ 원격↔로컬 복사(user@host:/path 형식)'], ['-r', '디렉터리 통째로 전송'], ['-P <port>', '접속 포트 지정(대문자 P)'], ['-i <key>', '개인키로 인증']],
+  export: [['KEY=VAL', '★ 환경변수 설정(따옴표 제거)'], ['(인자 없음)', '설정된 환경변수 목록']],
   env: [['(인자 없음)', '환경변수 전체 목록']],
-  top: [['(인자 없음)', 'CPU/메모리 사용량과 함께 프로세스 표시(시뮬)']],
-  kill: [['<pid>', '종료할 프로세스 PID']],
-  df: [['-h', '사람이 읽기 쉬운 단위로 디스크 사용량']],
-  free: [['-h', '사람이 읽기 쉬운 단위로 메모리 사용량']],
-  uptime: [['(인자 없음)', '시스템 가동 시간·부하 평균']],
-  date: [['(인자 없음)', '현재 시각 출력']],
-  arp: [['-a', 'ARP 테이블(IP↔MAC) 전체 표시']],
-  route: [['-n', '라우팅 테이블을 숫자(이름해석 없이)로 표시']],
-  wget: [['<url>', '다운로드할 URL(시뮬: 응답을 받아 저장)']],
-  curl: [['<url>', '요청할 URL(시뮬: 응답 본문 출력)']],
-  rot13: [['<text|file>', 'ROT13 변환할 문자열/파일(자기역함수)']],
-  caesar: [['<shift>', '시프트 양(0~25)'], ['<text|file>', '복호화할 문자열/파일']],
-  xor: [['<hex|file>', 'XOR할 16진수 문자열 또는 파일'], ['<key>', 'XOR 키(반복 적용)']],
-  vigenere: [['<key>', '비제네르 키워드'], ['<text|file>', '복호화할 문자열/파일']],
-  md5sum: [['<file>', '해시(지문)를 계산할 파일']],
-  hydra: [['<host>', '대상 호스트'], ['<service>', '서비스(ssh/ftp/http)'], ['<wordlist>', '대입할 비밀번호 사전 파일']],
-  hashcat: [['<hash|file>', '크랙할 단일 해시 또는 해시 파일'], ['-m/-a', '(시뮬) 모드/공격 플래그는 무시되고 사전 대조만 수행']],
-  dump: [['<대상>', '추출할 DB/메모리 키(예: users)']],
-  'airmon-ng': [['start <iface>', '인터페이스를 모니터 모드로 전환(→ <iface>mon)'], ['stop <iface>', '모니터 모드 해제']],
-  'airodump-ng': [['<iface>', '스캔할 모니터 인터페이스(예: wlan0mon). 모니터 모드 필요']],
-  'aireplay-ng': [['--deauth <n>', '보낼 인증해제(deauth) 패킷 수'], ['-a <BSSID>', '대상 AP의 BSSID(MAC)'], ['<iface>', '모니터 인터페이스. 클라이언트가 붙은 AP라야 핸드셰이크 캡처']],
-  'aircrack-ng': [['-w <wordlist>', '대입할 비밀번호 사전 파일'], ['<capfile>', '캡처 파일(예: capture-01.cap). 핸드셰이크 필요']],
-  chat: [['<말>', '현재 채널 상대에게 보낼 말(키워드 분석으로 응답)']],
+  top: [['(인자 없음)', 'CPU/메모리 사용량과 프로세스 표시(시뮬)']],
+  kill: [['<pid>', '★ 종료할 프로세스 PID'], ['-9 <pid>', '강제 종료(SIGKILL) — 무시 못 함'], ['-l', '시그널 목록']],
+  df: [['-h', '★ 사람이 읽기 쉬운 단위로 디스크 사용량'], ['(인자 없음)', '블록 단위로 표시']],
+  free: [['-h', '★ 사람이 읽기 쉬운 단위로 메모리 사용량'], ['-m', 'MB 단위']],
+  uptime: [['(인자 없음)', '시스템 가동 시간·접속자·부하 평균']],
+  date: [['(인자 없음)', '현재 시각 출력'], ['+<format>', '형식 지정(예: +%Y-%m-%d)']],
+  arp: [['-a', '★ ARP 테이블(IP↔MAC) 전체 표시'], ['-n', '이름 해석 없이 숫자로']],
+  route: [['-n', '★ 라우팅 테이블을 숫자로 표시'], ['(인자 없음)', '이름까지 해석해 표시']],
+  wget: [['<url>', '★ 다운로드할 URL'], ['-O <file>', '저장할 파일명 지정'], ['-q', '진행 메시지 숨김(quiet)'], ['-r', '링크 따라 재귀 다운로드']],
+  curl: [
+    ['<url>', '★ 요청할 URL(응답 본문 출력)'],
+    ['-s', '진행률·에러 표시 없이 조용히(silent)'],
+    ['-X <METHOD>', '★ HTTP 메서드 지정(GET/POST/PUT/DELETE)'],
+    ['-F <field>', '★ 폼 데이터/파일 업로드(multipart). 예: -F file=@shell.php'],
+    ['-d <data>', 'POST 본문 데이터 전송(application/x-www-form-urlencoded)'],
+    ['-H <header>', '요청 헤더 추가(예: -H "Cookie: SESSION=...")'],
+    ['-o <file>', '응답을 파일로 저장(소문자 o)'],
+    ['-O', '원격 파일명 그대로 저장(대문자 O)'],
+    ['-L', '리다이렉션(3xx)을 따라감(location)'],
+    ['-I', '본문 없이 응답 헤더만(HEAD)'],
+    ['-i', '응답 헤더 + 본문 함께'],
+    ['-k', '인증서 검증 무시(insecure)'],
+    ['-A <ua>', 'User-Agent 위장']
+  ],
+  rot13: [['<text|file>', '★ ROT13 변환할 문자열/파일(자기역함수)']],
+  caesar: [['<shift>', '★ 시프트 양(0~25)'], ['<text|file>', '★ 복호화할 문자열/파일']],
+  xor: [['<hex|file>', '★ XOR할 16진수 문자열 또는 파일'], ['<key>', '★ XOR 키(반복 적용)']],
+  vigenere: [['<key>', '★ 비제네르 키워드'], ['<text|file>', '★ 복호화할 문자열/파일']],
+  md5sum: [['<file>', '★ 해시(지문)를 계산할 파일']],
+  hydra: [
+    ['<host>', '★ 대상 호스트'],
+    ['<service>', '★ 서비스(ssh/ftp/http)'],
+    ['<wordlist>', '★ 대입할 비밀번호 사전 파일'],
+    ['-l <user>', '단일 사용자명 지정(소문자 l)'],
+    ['-L <file>', '사용자명 목록 파일(대문자 L)'],
+    ['-p <pass>', '단일 비밀번호'],
+    ['-P <file>', '비밀번호 사전 파일(대문자 P)'],
+    ['-t <N>', '동시 시도 수(스레드)']
+  ],
+  hashcat: [['<hash|file>', '★ 크랙할 단일 해시 또는 해시 파일'], ['-m <type>', '해시 종류 번호(0=MD5, 1000=NTLM …)'], ['-a <N>', '공격 모드(0=사전, 3=무차별)'], ['(시뮬)', '게임에선 -m/-a 무시하고 사전 대조만 수행']],
+  dump: [['<대상>', '★ 추출할 DB/메모리 키(예: users)']],
+  'airmon-ng': [['start <iface>', '★ 인터페이스를 모니터 모드로(→ <iface>mon)'], ['stop <iface>', '모니터 모드 해제'], ['check kill', '간섭 프로세스 종료(실제 환경)']],
+  'airodump-ng': [['<iface>', '★ 스캔할 모니터 인터페이스(예: wlan0mon)'], ['-c <ch>', '특정 채널만 청취'], ['--bssid <MAC>', '특정 AP만 집중'], ['-w <prefix>', '캡처를 파일로 저장']],
+  'aireplay-ng': [
+    ['-0 <n> / --deauth <n>', '★ 보낼 인증해제(deauth) 패킷 수'],
+    ['-a <BSSID>', '★ 대상 AP의 BSSID(MAC)'],
+    ['<iface>', '★ 모니터 인터페이스(클라이언트 붙은 AP라야 핸드셰이크 캡처)'],
+    ['-c <client>', '특정 클라이언트만 끊기']
+  ],
+  'aircrack-ng': [['<capfile>', '★ 캡처 파일(예: capture-01.cap, 핸드셰이크 필요)'], ['-w <wordlist>', '★ 대입할 비밀번호 사전 파일'], ['-b <BSSID>', '크랙할 대상 AP 지정']],
+  chat: [['<말>', '★ 현재 채널 상대에게 보낼 말(키워드 분석 응답)']],
   reply: [['<말>', 'chat 과 동일 — 현재 채널에 답장']],
   say: [['<말>', 'chat 과 동일 — 현재 채널에 말하기']],
-  channel: [['<이름>', '전환할 채널(mother/wraith 등). 인자 없으면 현재+목록 표시']],
+  channel: [['<이름>', '★ 전환할 채널(mother/wraith 등). 없으면 현재+목록']],
   contacts: [['(인자 없음)', '알려진 연락처 목록과 현재 채널 표시']],
-  dig: [['axfr', '존 트랜스퍼 시도(설정 오류 시 전체 레코드 노출)'], ['<domain>', '조회할 도메인'], ['@<ns>', '질의할 네임서버']],
-  ftp: [['<host>', '접속할 FTP 호스트(hydra로 찾은 자격 사용)']],
-  login: [['<user>', '사용자명'], ['<payload>', "SQLi 페이로드(예: ' OR '1'='1' -- / ' UNION SELECT ...)"]],
-  tcpdump: [['-r <pcap>', '읽을 캡처 파일'], ['[필터]', '포함 문자열 필터(예: Cookie)']],
-  nc: [['-lvnp <port>', '리버스 셸 리스너 대기(listen/verbose/numeric/port)']],
-  file: [['<file>', '파일 형식 식별(압축 종류 등)']],
-  bunzip2: [['<file.bz2>', 'bzip2 한 겹 해제']],
-  gunzip: [['<file.gz>', 'gzip 한 겹 해제']],
-  tar: [['-xvf <file.tar>', 'tar 아카이브 해제']],
-  steghide: [['extract -sf <img>', '이미지에 숨겨진 데이터 추출'], ['info <img>', '숨김 데이터 정보']],
-  mount: [['<dev> <dir>', '디스크 마운트(컨테이너 탈출용 호스트 디스크)']],
-  chroot: [['<dir>', '루트 디렉터리 전환(컨테이너 탈출 마무리)']],
-  sed: [['-i', '파일을 직접(in-place) 편집'], ["'/패턴/d'", '패턴이 든 줄 삭제'], ['<file>', '대상 파일']],
-  systemctl: [['poweroff', '코어 전원 차단(엔딩 트리거)'], ['status', '상태 표시']],
-  zip2john: [['<file.zip>', '암호 zip의 해시를 추출(이후 john으로 크랙)']]
+  dig: [['<domain>', '★ 조회할 도메인'], ['axfr', '★ 존 트랜스퍼 시도(설정 오류 시 전체 레코드 노출)'], ['@<ns>', '★ 질의할 네임서버 지정'], ['+short', '핵심 응답만 간결히'], ['-t <type>', '레코드 종류(A/MX/NS/TXT)']],
+  ftp: [['<host>', '★ 접속할 FTP 호스트(hydra로 찾은 자격 사용)']],
+  login: [['<user>', '★ 사용자명'], ['<payload>', "★ SQLi 페이로드(예: ' OR '1'='1' -- / ' UNION SELECT ...)"]],
+  tcpdump: [['-r <pcap>', '★ 읽을 캡처 파일(read)'], ['[필터]', '★ 포함 문자열 필터(예: Cookie)'], ['-w <file>', '캡처를 파일로 저장(write)'], ['-n', '이름 해석 없이 숫자로'], ['-i <iface>', '청취할 인터페이스']],
+  nc: [['-lvnp <port>', '★ 리버스 셸 리스너 대기(listen/verbose/numeric/port)'], ['-l', '리슨 모드(연결을 기다림)'], ['-v', '상세 출력(verbose)'], ['-n', '이름 해석 없이 숫자'], ['-p <port>', '포트 지정'], ['<host> <port>', '대상에 직접 연결(클라이언트)']],
+  file: [['<file>', '★ 내용을 보고 파일 형식 식별(확장자 무관)']],
+  bunzip2: [['<file.bz2>', '★ bzip2 한 겹 해제'], ['-k', '원본 유지(keep)']],
+  gunzip: [['<file.gz>', '★ gzip 한 겹 해제'], ['-k', '원본 유지(keep)']],
+  tar: [
+    ['-xvf <file.tar>', '★ tar 해제(eXtract+Verbose+File)'],
+    ['-x', '추출(extract)'], ['-c', '생성(create)'], ['-t', '내용 목록 보기(list)'],
+    ['-v', '처리 과정 표시(verbose)'], ['-f <file>', '대상 아카이브 파일 지정'],
+    ['-z', 'gzip 함께(.tar.gz)'], ['-j', 'bzip2 함께(.tar.bz2)']
+  ],
+  steghide: [['extract -sf <img>', '★ 이미지에 숨겨진 데이터 추출(stego file)'], ['embed -cf <img> -ef <f>', '커버 이미지에 파일 은닉(embed)'], ['-p <pass>', '암호 지정'], ['info <img>', '숨김 데이터 정보']],
+  mount: [['<dev> <dir>', '★ 디스크를 디렉터리에 연결(컨테이너 탈출용 호스트 디스크)'], ['(인자 없음)', '현재 마운트된 목록']],
+  chroot: [['<dir>', '★ 루트 디렉터리를 전환(컨테이너 탈출 마무리)']],
+  sed: [['-i', '★ 파일을 직접(in-place) 편집'], ["'/패턴/d'", '★ 패턴이 든 줄 삭제(delete)'], ["'s/A/B/'", '★ A를 B로 치환(substitute). g 붙이면 모든 일치'], ['-n', '자동 출력 끄기(p와 함께 특정 줄만)'], ['<file>', '★ 대상 파일']],
+  systemctl: [['poweroff', '★ 코어 전원 차단(엔딩 트리거)'], ['-f', '강제(force)'], ['status <svc>', '서비스 상태'], ['start/stop <svc>', '서비스 시작/중지'], ['restart <svc>', '재시작']],
+  zip2john: [['<file.zip>', '★ 암호 zip의 해시를 추출(이후 john으로 크랙)']]
 };
 
 /* ---------- 파일 탐색 ---------- */
@@ -125,7 +218,9 @@ reg('man', '명령어 매뉴얼', 'man <cmd>', ({ args }) => {
   const opts = OPTS[c.name];
   if (opts && opts.length) {
     out += '\n\nOPTIONS';
-    for (const [tok, d] of opts) out += `\n    ${pad(tok, 16)} ${d}`;
+    for (const [tok, d] of opts) out += `\n    ${pad(tok, 20)} ${d}`;
+    out += `\n    ${'-'.repeat(20)}`;
+    out += `\n    ${pad('★', 20)} 이 시뮬레이터에서 동작 · 그 외는 실제 유닉스 기준 설명`;
   }
   return out;
 });
@@ -547,14 +642,16 @@ reg('zip2john', 'zip 해시 추출(시뮬)', 'zip2john <file.zip>', ({ args, gam
   return `${args[0]}:${n.ziphash || ('$zip2$*0*' + (args[0] || 'data'))}`;
 });
 reg('rm', '파일/디렉터리 삭제', 'rm [-r] <path>', ({ args, game }) => {
+  const flags = args.filter(a => a.startsWith('-')).join('');   // -rf, -fr, -r -f 모두 인식
+  const recursive = flags.includes('r');
   const targets = args.filter(a => !a.startsWith('-'));
-  if (!targets[0]) return 'usage: rm [-r] <path>';
+  if (!targets[0]) return 'usage: rm [-rf] <path>';
   const out = [];
   for (const tgt of targets) {
     const abs = game.fs.resolve(tgt, game.cwd);
     const node = game.fs.getNode(abs);
     if (!node) { out.push(`rm: ${tgt}: No such file or directory`); continue; }
-    if (node.type === 'dir' && !args.includes('-r')) { out.push(`rm: ${tgt}: is a directory`); continue; }
+    if (node.type === 'dir' && !recursive) { out.push(`rm: ${tgt}: is a directory`); continue; }
     const r = game.fs.remove(abs, game.user);
     if (r.err) out.push(`rm: ${tgt}: ${r.err}`);
   }
@@ -825,18 +922,87 @@ reg('ftp', 'FTP 접속(시뮬)', 'ftp <host>', ({ args, game }) => {
 });
 
 // SQL 인젝션: 인증 우회 + UNION 덤프
-reg('login', '로그인(SQLi 연습용)', 'login <user> <payload>', ({ game, raw }) => {
-  const payload = (raw || '').toLowerCase();   // 따옴표 보존 위해 원문 사용
-  if (/union\s+select/.test(payload)) {
+/* ---- 작은 SQL WHERE 평가기 (하드코딩 패턴 매칭이 아니라 실제로 참/거짓을 계산) ---- */
+function sqlTokenize(s) {
+  const t = []; let i = 0;
+  while (i < s.length) {
+    const c = s[i];
+    if (/\s/.test(c)) { i++; continue; }
+    if (c === "'" || c === '"') {                 // 문자열 리터럴
+      const q = c; let j = i + 1, str = '';
+      while (j < s.length && s[j] !== q) { str += s[j]; j++; }
+      if (j >= s.length) return null;             // 따옴표 안 맞음 → 구문오류(주입 실패)
+      t.push({ k: 'val', v: str }); i = j + 1; continue;
+    }
+    if (/[0-9]/.test(c)) { let j = i; while (j < s.length && /[0-9.]/.test(s[j])) j++; t.push({ k: 'val', v: s.slice(i, j) }); i = j; continue; }
+    if (/[a-zA-Z_]/.test(c)) {
+      let j = i; while (j < s.length && /[a-zA-Z0-9_.]/.test(s[j])) j++;
+      const w = s.slice(i, j), u = w.toUpperCase();
+      if (u === 'AND' || u === 'OR' || u === 'NOT') t.push({ k: u });
+      else if (u === 'TRUE') t.push({ k: 'val', v: '1' });
+      else if (u === 'FALSE') t.push({ k: 'val', v: '0' });
+      else t.push({ k: 'col', v: w });            // 컬럼 식별자
+      i = j; continue;
+    }
+    if (c === '(') { t.push({ k: '(' }); i++; continue; }
+    if (c === ')') { t.push({ k: ')' }); i++; continue; }
+    if (c === '=') { t.push({ k: 'op', v: '=' }); i += (s[i + 1] === '=' ? 2 : 1); continue; }
+    if (c === '!' && s[i + 1] === '=') { t.push({ k: 'op', v: '!=' }); i += 2; continue; }
+    if (c === '<' && s[i + 1] === '>') { t.push({ k: 'op', v: '!=' }); i += 2; continue; }
+    return null;                                   // 알 수 없는 문자 → 구문오류
+  }
+  return t;
+}
+// 한 행(row)에 대해 토큰을 재귀하강 평가 → boolean
+function sqlEvalRow(toks, row) {
+  let p = 0;
+  const peek = () => toks[p], eat = () => toks[p++];
+  const colVal = (name) => { const key = String(name).split('.').pop().toLowerCase(); return key in row ? row[key] : null; };
+  function operand() { const t = peek(); if (!t) return null; if (t.k === 'val') { eat(); return t.v; } if (t.k === 'col') { eat(); return colVal(t.v); } return null; }
+  function primary() {
+    const t = peek(); if (!t) return false;
+    if (t.k === '(') { eat(); const v = orExpr(); if (peek() && peek().k === ')') eat(); return v; }
+    const a = operand();
+    if (peek() && peek().k === 'op') { const op = eat().v; const b = operand(); if (a == null || b == null) return false; return op === '=' ? String(a) === String(b) : String(a) !== String(b); }
+    if (a == null) return false; return /^[0-9.]+$/.test(String(a)) ? parseFloat(a) !== 0 : false;
+  }
+  function notExpr() { if (peek() && peek().k === 'NOT') { eat(); return !notExpr(); } return primary(); }
+  function andExpr() { let v = notExpr(); while (peek() && peek().k === 'AND') { eat(); v = notExpr() && v; } return v; }
+  function orExpr() { let v = andExpr(); while (peek() && peek().k === 'OR') { eat(); v = orExpr_term() || v; } return v; }
+  function orExpr_term() { return andExpr(); }
+  return orExpr();
+}
+reg('login', '로그인(SQLi 연습용)', 'login <user> "<payload>"', ({ game, raw }) => {
+  // user = 첫 토큰, payload = 그 뒤 원문 전체(작은따옴표는 SQL 주입 문법이므로 보존,
+  // 셸 스타일 큰따옴표 한 겹만 벗긴다)
+  const m = (raw || '').match(/^\s*login\s+(\S+)\s*([\s\S]*)$/i);
+  const user = m ? m[1] : '';
+  let payload = m ? m[2].trim() : '';
+  const dq = payload.match(/^"([\s\S]*)"$/); if (dq) payload = dq[1];
+  if (!user && !payload) return 'usage: login <user> "<payload>"   (예: login admin "\' OR \'1\'=\'1\' --")';
+
+  // 앱이 사용자 입력을 그대로 끼워 만든 *취약한* 쿼리(이스케이프 없음)
+  let query = `SELECT * FROM users WHERE username='${user}' AND password='${payload}'`;
+  const execd = query.replace(/(--|#).*$/, '');       // SQL 주석(-- 또는 #) 이후 잘라냄
+  const shown = '[SQL] ' + execd.trim();
+
+  // UNION 기반 덤프
+  if (/union\s+select/i.test(execd)) {
     game.sqlDumped = true;
     const data = (game.dumps && game.dumps.users) || 'id | user | password\n 1 | admin | $1$aa$adminhash99';
-    return '[DB] UNION 쿼리 실행 — users 테이블이 화면으로 새어나온다:\n' + data;
+    return `${shown}\n[DB] UNION 결과로 users 테이블이 노출된다:\n` + data;
   }
-  if (/'\s*or\s*'?1'?\s*=\s*'?1|\bor\s+1\s*=\s*1/.test(payload)) {
-    game.sqliAuth = true;
-    return "[AUTH] 쿼리가 항상 참(' OR '1'='1')이 됐다 → 인증 우회 성공! 관리 세션 획득.";
-  }
-  return '[AUTH] 로그인 실패. (인증을 *논리*로 뚫어라 — 항상 참이 되는 조건을 주입)';
+
+  // WHERE 절을 실제로 평가
+  const whereStr = execd.replace(/^.*?\bwhere\b/i, '').trim();
+  const toks = sqlTokenize(whereStr);
+  if (!toks) return `${shown}\n[SQL ERROR] 따옴표가 안 맞아 쿼리가 깨졌다 — 주입 실패.`;
+  const rows = [{ username: 'admin', password: '$1$aa$adminhash99' }, { username: 'jkim', password: '$1$bb$kimhash01' }];
+  let ok = false;
+  try { for (const r of rows) { if (sqlEvalRow(toks, r)) { ok = true; break; } } }
+  catch (e) { return `${shown}\n[SQL ERROR] 쿼리 평가 실패: ${e.message}`; }
+  if (ok) { game.sqliAuth = true; return `${shown}\n[AUTH] WHERE 절이 참(TRUE)으로 평가됨 → 인증 우회 성공! 관리 세션 획득.`; }
+  return `${shown}\n[AUTH] WHERE 절이 거짓(FALSE) → 로그인 실패. (항상 참이 되는 조건을 주입하라)`;
 });
 
 // 패킷 캡처 분석 (자체 필터 — 파이프 없이)
@@ -924,14 +1090,24 @@ reg('chroot', '루트 전환(시뮬)', 'chroot <dir>', ({ args, game }) => {
 });
 
 // 로그 세탁 / 시간 조작
-reg('sed', '스트림 편집(시뮬)', "sed -i '/패턴/d' <file>", ({ args, game, raw }) => {
+reg('sed', '스트림 편집(시뮬)', "sed -i '/패턴/d' <file>  ·  sed -i 's/A/B/g' <file>", ({ args, game, raw }) => {
   const inplace = args.includes('-i');
-  const m = raw.match(/\/([^/]+)\/d/);
   const file = args[args.length - 1];
   const abs = game.fs.resolve(file, game.cwd);
   const n = game.fs.getNode(abs);
   if (!n || n.type !== 'file') return `sed: ${file}: 없음`;
-  if (!m) return "sed: 표현식이 필요하다 (예: sed -i '/10.0.0.42/d' file)";
+  // 치환: s/A/B/[g]
+  const sub = raw.match(/s\/((?:\\.|[^/])*)\/((?:\\.|[^/])*)\/(g?)/);
+  if (sub) {
+    let re;
+    try { re = new RegExp(sub[1], sub[3] ? 'g' : ''); } catch (e) { return `sed: 잘못된 정규식: ${sub[1]}`; }
+    const result = n.content.split('\n').map(l => l.replace(re, sub[2])).join('\n');
+    if (inplace) { n.content = result; return ''; }
+    return result;
+  }
+  // 삭제: /패턴/d
+  const m = raw.match(/\/([^/]+)\/d/);
+  if (!m) return "sed: 표현식이 필요하다 (예: sed -i '/10.0.0.42/d' file  또는  sed -i 's/A/B/g' file)";
   const pat = m[1];
   const kept = n.content.split('\n').filter(l => !l.includes(pat));
   if (inplace) { n.content = kept.join('\n'); game.logScrubbed = pat; return ''; }
