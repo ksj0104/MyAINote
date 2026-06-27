@@ -3,164 +3,131 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TERMINAL//BREACH</title>
+  <title>TERMINAL//BREACH — NULLSEC OS</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><path d='M4 5 L17 18 L31 18 L44 5 L36 27 L24 43 L12 27 Z' fill='%233fe0ea'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body data-theme="cyan" data-mode="terminal" data-screen="menu">
-  <div id="crt" class="crt">
-    <div id="deck">
+<body data-theme="cyan" data-screen="boot">
+  <div id="os">
 
-      <!-- ░░ 상단 시스템 바 (항상 표시) ░░ -->
-      <header id="system-bar">
-        <div class="sys-brand">
-          <svg class="sys-fox" viewBox="0 0 48 48" width="20" height="20" aria-hidden="true">
-            <path d="M4 5 L17 18 L31 18 L44 5 L36 27 L24 43 L12 27 Z" fill="currentColor"/>
-            <circle cx="18.5" cy="24" r="1.7" fill="var(--void)"/><circle cx="29.5" cy="24" r="1.7" fill="var(--void)"/>
-          </svg>
-          NULLSEC<span class="sys-slash">//</span>DECK
-        </div>
-        <div class="sys-ticker">
-          <span class="sys-tag">MISSION</span>
-          <span id="mission-id">--</span>
-          <span class="sys-div"></span>
-          <span id="mission-title">접속 중</span>
-          <span id="mission-objective" class="sys-obj">시스템 초기화…</span>
-        </div>
-        <div class="sys-right">
-          <div class="sys-link" title="네트워크 링크"><i></i><i></i><i></i> LINK</div>
-          <div class="sys-prog">
-            <span class="sys-tag">PROGRESS</span>
-            <span id="mission-progress">0 / 0</span>
-            <div class="progress-bar"><div id="progress-fill"></div></div>
-          </div>
-          <button id="sound-toggle" class="hud-btn">♪ ON</button>
-        </div>
-      </header>
+    <!-- ░░ 부팅 화면 ░░ -->
+    <div id="boot-screen"><pre id="boot-log"></pre></div>
 
-      <!-- ░░ 타이틀 히어로 (menu 스크린) ░░ -->
-      <section id="title-hero">
-        <div class="hero-logo">
-          <svg class="hero-fox" viewBox="0 0 48 48" width="46" height="46" aria-hidden="true">
-            <path d="M4 5 L17 18 L31 18 L44 5 L36 27 L24 43 L12 27 Z" fill="currentColor"/>
-            <circle cx="18.5" cy="24" r="1.8" fill="var(--void)"/><circle cx="29.5" cy="24" r="1.8" fill="var(--void)"/>
-          </svg>
-          <h1 id="hero-title">TERMINAL<span class="hero-slash">//</span>BREACH</h1>
-        </div>
-        <div id="hero-tagline" class="hero-tagline">거대기업이 모든 빛과 정보를 쥔 시대 — 너는 NULLSEC의 신입이다.</div>
-        <div id="hero-status" class="hero-status"></div>
-      </section>
+    <!-- ░░ 바탕화면 ░░ -->
+    <div id="desktop">
+      <div id="wallpaper"></div>
 
-      <!-- ░░ 타이틀/메뉴 (menu 스크린) ░░ -->
-      <div id="menu-cards"></div>
-
-      <!-- ░░ 상태바 (os 모드) ░░ -->
-      <div id="status-bar"></div>
-
-      <!-- ░░ 작업 공간: 내비 | 파일 | (메신저+터미널) | 네트워크 ░░ -->
-      <div id="workspace">
-        <nav id="nav-rail">
-          <div class="nav-brand" title="NULLSEC">
-            <svg viewBox="0 0 48 48" width="30" height="30" aria-label="NULLSEC">
-              <path d="M4 5 L17 18 L31 18 L44 5 L36 27 L24 43 L12 27 Z" fill="currentColor"/>
-              <circle cx="18.5" cy="24" r="1.7" fill="var(--void)"/>
-              <circle cx="29.5" cy="24" r="1.7" fill="var(--void)"/>
-            </svg>
-          </div>
-          <button class="nav-ico active" data-tool="dashboard" title="작전 대시보드" onclick="window.term.selectTool('dashboard')">◈</button>
-          <button class="nav-ico" data-tool="network" title="네트워크 스캐너" onclick="window.term.selectTool('network')">◢</button>
-          <button class="nav-ico" data-tool="database" title="DB 인젝션" onclick="window.term.selectTool('database')">⛁</button>
-          <button class="nav-ico" data-tool="files" title="파일 탐색기" onclick="window.term.selectTool('files')">▤</button>
-          <button class="nav-ico" data-tool="settings" title="설정" onclick="window.term.selectTool('settings')">⚙</button>
-          <button class="nav-ico nav-bottom" title="메뉴" onclick="window.game.showMenu()">⌂</button>
-        </nav>
-
-        <aside id="fstree-panel" class="panel side-panel">
-          <div class="panel-head">▤ FILESYSTEM</div>
-          <div id="fstree-list" class="panel-body"></div>
-        </aside>
-
-        <div id="center-col">
-          <section id="story-panel" class="panel">
-            <div class="sp-headbar">
-              <span class="sp-label">◈ COMMS // 보안 채널</span>
-              <span id="story-mid">--</span>
-            </div>
-            <div id="story-body"></div>
-          </section>
-
-          <main id="terminal" class="panel">
-            <div class="panel-head term-head">▸ TERMINAL <span class="term-sub">// 명령 콘솔</span></div>
-            <div id="screen">
-              <div id="output"></div>
-            </div>
-          </main>
-        </div>
-
-        <aside id="tool-dock" class="panel side-panel">
-          <div class="panel-head" id="tool-head">◈ 작전 대시보드</div>
-          <div id="tool-views" class="panel-body">
-            <div class="tool-view" data-view="dashboard"><div id="tool-dashboard"></div></div>
-            <div class="tool-view" data-view="network">
-              <div class="tool-section">
-                <label class="tool-label">대상 (호스트 / 대역)</label>
-                <div class="tool-row">
-                  <input id="net-target" class="tool-input" placeholder="예: dev-test.helios.corp" />
-                  <button class="tool-btn" onclick="window.term.toolScan()">스캔 ▶</button>
-                </div>
-                <div class="tool-row"><button class="tool-btn ghost" onclick="window.term.toolScan('-sV')">버전 스캔 (nmap -sV)</button></div>
-              </div>
-              <div class="tool-divider">발견된 노드</div>
-              <div id="targets-list"></div>
-              <div id="net-actions"></div>
-            </div>
-            <div class="tool-view" data-view="database"><div id="tool-database"></div></div>
-            <div class="tool-view" data-view="files"><div id="tool-files"></div></div>
-            <div class="tool-view" data-view="settings"><div id="tool-settings"></div></div>
-          </div>
-        </aside>
+      <!-- 데스크톱 아이콘 -->
+      <div id="desk-icons">
+        <button class="desk-icon" data-app="messenger">
+          <span class="di-ic">📨</span><span class="di-l">메신저</span><span class="di-badge" hidden></span>
+        </button>
+        <button class="desk-icon" data-app="terminal">
+          <span class="di-ic">💻</span><span class="di-l">터미널</span>
+        </button>
+        <button class="desk-icon" data-app="browser">
+          <span class="di-ic">🌐</span><span class="di-l">브라우저</span>
+        </button>
       </div>
 
-      <!-- ░░ 하단 명령 바 (항상 표시) ░░ -->
-      <footer id="command-bar">
-        <span id="prompt-label" class="prompt">guest@nullsec-node:~$</span>
-        <span class="cmd-arrow">▸</span>
-        <input id="cmd-input" type="text" autocomplete="off" autocapitalize="off"
-               autocorrect="off" spellcheck="false" aria-label="명령 입력" placeholder="명령을 입력하고 Enter…" />
-        <span class="caret-block">█</span>
-        <span class="cmd-hint">TAB 완성 · ↑↓ 선택/히스토리 · <b>intel</b> · <b>hint</b> · <b>chat</b> · <b>help</b></span>
-      </footer>
-    </div>
-
-    <!-- ░░ 코드랩 오버레이 ░░ -->
-    <div id="codelab">
-      <div class="cl-head">
-        <span id="cl-title">CODE LAB</span>
-        <button class="hud-btn" onclick="window.game.showMenu()">◀ 메뉴</button>
-      </div>
-      <div class="cl-body">
-        <div class="cl-left">
-          <div id="cl-desc" class="cl-desc"></div>
-          <pre id="cl-input" class="cl-input"></pre>
-          <div id="cl-nav" class="cl-nav"></div>
+      <!-- 미션 위젯 -->
+      <aside id="mission-widget" hidden>
+        <div class="mw-head"><span class="mw-dot"></span> 현재 임무 <span id="mw-id" class="mw-id">--</span></div>
+        <div id="mw-title" class="mw-title">접속 대기</div>
+        <div id="mw-obj" class="mw-obj">세션을 시작하라.</div>
+        <div class="mw-prog"><div class="mw-prog-row"><span>진행</span><span id="mw-prog-text">0 / 0</span></div><div class="mw-bar"><div id="mw-fill"></div></div></div>
+        <div class="mw-stance"><span>STANCE</span> <span id="mw-stance" class="mw-stance-v">중립</span></div>
+        <div class="mw-submit">
+          <input id="mw-input" class="mw-in" placeholder="정답 제출(submit)…" />
+          <button id="mw-send" class="mw-btn">제출</button>
         </div>
-        <div class="cl-right">
-          <textarea id="cl-editor" spellcheck="false" autocomplete="off"></textarea>
-          <div class="cl-actions">
-            <button class="cl-run" onclick="window.CodeLab.runFromEditor()">실행 ▶</button>
-            <span class="cl-hint">solve(input) 함수를 정의하고 정답 문자열을 반환하세요.</span>
+      </aside>
+
+      <!-- 창 레이어 (윈도우 매니저가 채움) -->
+      <div id="window-layer"></div>
+
+      <!-- 세션 런처 모달 -->
+      <div id="launcher" class="modal-overlay" hidden>
+        <div class="modal launcher">
+          <div class="modal-titlebar"><span class="mt-title">◈ NULLSEC OS — 세션</span></div>
+          <div class="launcher-body">
+            <div class="launcher-logo">TERMINAL<span class="slash">//</span>BREACH</div>
+            <div class="launcher-tag">거대기업이 모든 빛과 정보를 쥔 시대 — 너는 NULLSEC의 신입이다.</div>
+            <div id="launcher-actions" class="launcher-actions"></div>
+            <div class="launcher-foot">↵ 시작하면 0xMOTHER가 메신저로 접선한다.</div>
           </div>
-          <pre id="cl-output" class="cl-output"></pre>
+        </div>
+      </div>
+
+      <!-- 일반 모달(미션 선택 / 그 외 모드) -->
+      <div id="modal-host" class="modal-overlay" hidden>
+        <div class="modal">
+          <div class="modal-titlebar"><span id="modal-title" class="mt-title">메뉴</span><button class="mt-x" onclick="window.term.closeModal()">✕</button></div>
+          <div id="modal-body" class="modal-body"></div>
+        </div>
+      </div>
+
+      <!-- 엔딩 오버레이 -->
+      <div id="ending-screen" class="modal-overlay" hidden>
+        <div class="ending-box"><pre id="ending-body"></pre><button class="ending-btn" onclick="window.game.showMenu()">메뉴로</button></div>
+      </div>
+
+      <!-- 코드랩 오버레이 (앱 형태) -->
+      <div id="codelab">
+        <div class="cl-head">
+          <span id="cl-title">CODE LAB</span>
+          <button class="hud-btn" onclick="window.game.showMenu()">◀ 메뉴</button>
+        </div>
+        <div class="cl-body">
+          <div class="cl-left">
+            <div id="cl-desc" class="cl-desc"></div>
+            <pre id="cl-input" class="cl-input"></pre>
+            <div id="cl-nav" class="cl-nav"></div>
+          </div>
+          <div class="cl-right">
+            <textarea id="cl-editor" spellcheck="false" autocomplete="off"></textarea>
+            <div class="cl-actions">
+              <button class="cl-run" onclick="window.CodeLab.runFromEditor()">실행 ▶</button>
+              <span class="cl-hint">solve(input) 함수를 정의하고 정답 문자열을 반환하세요.</span>
+            </div>
+            <pre id="cl-output" class="cl-output"></pre>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="scanlines"></div>
-    <div class="vignette"></div>
+    <!-- ░░ 작업표시줄 ░░ -->
+    <footer id="taskbar">
+      <button id="start-btn" title="시작">
+        <svg viewBox="0 0 48 48" width="18" height="18"><path d="M4 5 L17 18 L31 18 L44 5 L36 27 L24 43 L12 27 Z" fill="currentColor"/></svg>
+        <span>NULLSEC&nbsp;OS</span>
+      </button>
+      <div id="task-list"></div>
+      <div id="systray">
+        <button id="sound-toggle" class="tray-btn" title="사운드">♪</button>
+        <span id="clock">--:--</span>
+      </div>
+    </footer>
+
+    <!-- 시작 메뉴 -->
+    <div id="start-menu" hidden>
+      <button class="sm-item" data-act="launcher">⟲ 세션 (새 게임/이어하기)</button>
+      <button class="sm-item" data-act="missions">🗂 미션 선택 (복습)</button>
+      <button class="sm-item" data-act="modes">🧩 그 외 모드 (학습·코드랩·워게임)</button>
+      <div class="sm-div"></div>
+      <button class="sm-item" data-act="intel">🛈 작전 정보 (intel)</button>
+      <button class="sm-item" data-act="theme">🎨 테마 전환</button>
+      <button class="sm-item" data-act="restart">⏏ 처음부터</button>
+    </div>
+
   </div>
+  <div class="scanlines"></div>
+  <div class="vignette"></div>
 
+  <!-- 게임 엔진 (무변경) -->
   <script src="js/filesystem.js"></script>
   <script src="js/commands.js"></script>
   <script src="js/levels.js"></script>
@@ -168,6 +135,11 @@
   <script src="js/modes.js"></script>
   <script src="js/comms.js"></script>
   <script src="js/game.js"></script>
-  <script src="js/terminal.js"></script>
+  <!-- NULLSEC OS 셸 -->
+  <script src="js/os/window-manager.js"></script>
+  <script src="js/apps/terminal-app.js"></script>
+  <script src="js/apps/messenger.js"></script>
+  <script src="js/apps/browser.js"></script>
+  <script src="js/os/shell.js"></script>
 </body>
 </html>

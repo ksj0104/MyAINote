@@ -486,3 +486,210 @@ body[data-overlay="codelab"] #workspace, body[data-overlay="codelab"] #status-ba
   .sys-brand { font-size: 14px; }
   #menu-cards { grid-template-columns: repeat(2, 1fr) !important; }
 }
+
+/* ============================================================
+ * ░░░ NULLSEC OS — 데스크톱 셸 (신규 레이어) ░░░
+ * ============================================================ */
+#os { position: fixed; inset: 0; display: flex; flex-direction: column;
+  background: radial-gradient(130% 100% at 50% 0%, #0c1620 0%, var(--void) 55%, #000 100%); }
+
+/* 부팅 */
+#boot-screen { display: none; flex: 1; align-items: flex-start; justify-content: center; padding: 4vh 20px; overflow: hidden; }
+#boot-log { font-family: 'VT323', monospace; font-size: 17px; line-height: 1.3; color: var(--console);
+  text-shadow: 0 0 8px rgba(111,224,160,.4); white-space: pre-wrap; margin: 0; }
+body[data-screen="boot"] #boot-screen { display: flex; }
+body[data-screen="boot"] #desktop, body[data-screen="boot"] #taskbar { display: none; }
+
+/* 바탕화면 */
+#desktop { position: relative; flex: 1; overflow: hidden; }
+#wallpaper { position: absolute; inset: 0;
+  background-image:
+    radial-gradient(60% 50% at 80% 15%, rgba(63,224,234,.07), transparent 60%),
+    linear-gradient(var(--steel-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--steel-line) 1px, transparent 1px);
+  background-size: auto, 38px 38px, 38px 38px; opacity: .5; }
+
+/* 데스크톱 아이콘 */
+#desk-icons { position: absolute; top: 16px; left: 14px; display: flex; flex-direction: column; gap: 8px; z-index: 5; }
+.desk-icon { width: 78px; height: 78px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  background: transparent; border: 1px solid transparent; border-radius: 8px; color: var(--label); cursor: pointer; position: relative; }
+.desk-icon:hover { background: rgba(63,224,234,.08); border-color: var(--steel-dim); color: var(--signal); }
+.di-ic { font-size: 30px; filter: drop-shadow(0 0 6px var(--glow)); }
+.di-l { font-size: 11px; font-weight: 600; letter-spacing: .5px; }
+.di-badge { position: absolute; top: 6px; right: 12px; color: var(--alert); font-size: 14px; animation: blink 1s steps(1) infinite; }
+
+/* 미션 위젯 */
+#mission-widget { position: absolute; top: 16px; right: 16px; width: 264px; z-index: 99990;
+  display: none; flex-direction: column; gap: 8px; padding: 12px 13px;
+  background: linear-gradient(180deg, rgba(14,26,36,.96), rgba(10,19,27,.96));
+  border: 1px solid var(--steel); border-left: 3px solid var(--signal); box-shadow: 0 8px 30px rgba(0,0,0,.5); }
+body[data-screen="play"] #mission-widget { display: flex; }
+.mw-head { font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: var(--label-dim); display: flex; align-items: center; gap: 6px; }
+.mw-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 8px var(--signal); }
+.mw-id { color: var(--signal); margin-left: auto; }
+.mw-title { font-size: 16px; font-weight: 700; color: var(--signal-soft); }
+.mw-obj { font-family: 'VT323', monospace; font-size: 16px; line-height: 1.35; color: var(--objective); }
+.mw-prog-row { display: flex; justify-content: space-between; font-size: 10px; letter-spacing: 1px; color: var(--label-dim); margin-bottom: 3px; }
+.mw-bar { height: 5px; background: var(--steel-dim); border-radius: 3px; overflow: hidden; }
+#mw-fill { height: 100%; width: 0; background: var(--signal); box-shadow: 0 0 8px var(--glow); transition: width .3s; }
+.mw-stance { font-size: 11px; letter-spacing: 1px; color: var(--label-dim); }
+.mw-stance-v { color: var(--wraith); font-weight: 700; }
+.mw-submit { display: flex; gap: 5px; margin-top: 2px; }
+.mw-in { flex: 1; min-width: 0; background: var(--void); border: 1px solid var(--steel-dim); color: var(--signal-soft);
+  font-family: 'VT323', monospace; font-size: 15px; padding: 5px 7px; outline: none; }
+.mw-in:focus { border-color: var(--signal); }
+.mw-btn { background: var(--signal); color: var(--void); border: none; font-family: 'Chakra Petch'; font-weight: 700; font-size: 11px; padding: 5px 9px; cursor: pointer; }
+
+/* 창 */
+#window-layer { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+.win { position: absolute; display: flex; flex-direction: column; pointer-events: auto;
+  background: linear-gradient(180deg, var(--deck-2), var(--deck)); border: 1px solid var(--steel);
+  box-shadow: 0 10px 36px rgba(0,0,0,.55); min-width: 320px; min-height: 200px; }
+.win[hidden] { display: none !important; }            /* 숨김(미생성/닫힘) */
+.win.minimized { display: none !important; }           /* 최소화 = 데스크톱에서 숨김(작업표시줄 유지) */
+.win.focused { border-color: var(--signal); box-shadow: 0 0 0 1px var(--glow), 0 14px 44px rgba(0,0,0,.6); }
+.win.maxed { left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important; }
+.win-bar { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 6px 0 11px; cursor: grab;
+  background: linear-gradient(180deg, #16323d, #0e222c); border-bottom: 1px solid var(--steel-dim); user-select: none; }
+.win.focused .win-bar { background: linear-gradient(180deg, #1b4250, #103040); }
+.win-ic { font-size: 14px; }
+.win-title { flex: 1; font-family: 'Chakra Petch'; font-size: 12px; font-weight: 700; letter-spacing: 1px; color: var(--signal-soft); text-shadow: 0 0 6px var(--glow); white-space: nowrap; overflow: hidden; }
+.win-btns { display: flex; gap: 3px; }
+.wb { width: 24px; height: 22px; background: transparent; border: 1px solid transparent; color: var(--label); font-size: 12px; cursor: pointer; }
+.wb:hover { color: var(--signal); border-color: var(--steel); }
+.wb-x:hover { color: var(--alert); border-color: var(--alert); }
+.win-body { flex: 1; min-height: 0; display: flex; overflow: hidden; }
+.win-resize { position: absolute; right: 0; bottom: 0; width: 16px; height: 16px; cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--steel) 50%, var(--steel) 62%, transparent 62%, transparent 74%, var(--steel) 74%); }
+
+/* 작업표시줄 */
+#taskbar { flex: 0 0 auto; height: 42px; display: flex; align-items: center; gap: 8px; padding: 0 8px; z-index: 100001;
+  background: linear-gradient(180deg, #0e1c25, #081119); border-top: 1px solid var(--steel); }
+#start-btn { display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; cursor: pointer;
+  background: linear-gradient(180deg, #16323d, #0e222c); border: 1px solid var(--steel); color: var(--signal);
+  font-family: 'Chakra Petch'; font-weight: 700; font-size: 12px; letter-spacing: 1px; }
+#start-btn:hover { background: rgba(63,224,234,.12); }
+#task-list { flex: 1; display: flex; gap: 6px; overflow: hidden; }
+.task-btn { display: flex; align-items: center; gap: 6px; height: 30px; max-width: 180px; padding: 0 11px; cursor: pointer;
+  background: var(--deck-2); border: 1px solid var(--steel-dim); color: var(--label); font-family: 'Chakra Petch'; font-size: 11px; }
+.task-btn.active { border-color: var(--signal); color: var(--signal-soft); background: rgba(63,224,234,.1); }
+.task-btn.min { opacity: .6; }
+.tb-l { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#systray { display: flex; align-items: center; gap: 10px; padding-right: 6px; }
+.tray-btn { background: transparent; border: 1px solid var(--steel-dim); color: var(--signal); width: 28px; height: 26px; cursor: pointer; }
+.tray-btn.off { color: var(--label-dim); }
+#clock { font-family: 'VT323', monospace; font-size: 18px; color: var(--signal-soft); min-width: 44px; text-align: center; }
+
+/* 시작 메뉴 */
+#start-menu { position: fixed; left: 8px; bottom: 48px; width: 280px; z-index: 100002; padding: 6px;
+  background: linear-gradient(180deg, var(--deck-2), var(--deck)); border: 1px solid var(--steel); box-shadow: 0 10px 30px rgba(0,0,0,.6); }
+.sm-item { display: block; width: 100%; text-align: left; padding: 9px 11px; background: transparent; border: none; cursor: pointer;
+  color: var(--label); font-family: 'Chakra Petch'; font-size: 12.5px; }
+.sm-item:hover { background: rgba(63,224,234,.1); color: var(--signal); }
+.sm-div { height: 1px; background: var(--steel-dim); margin: 5px 0; }
+
+/* 모달(런처/메뉴/엔딩) */
+.modal-overlay { position: absolute; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center;
+  background: rgba(4,8,12,.74); backdrop-filter: blur(2px); }
+.modal-overlay[hidden] { display: none !important; }   /* hidden 속성이 author display:flex 를 이기도록 */
+.modal { width: 460px; max-width: 92%; max-height: 86%; display: flex; flex-direction: column;
+  background: linear-gradient(180deg, var(--deck-2), var(--deck)); border: 1px solid var(--signal); box-shadow: 0 0 0 1px var(--glow), 0 18px 50px rgba(0,0,0,.6); }
+.modal-titlebar { display: flex; align-items: center; height: 34px; padding: 0 6px 0 13px; background: linear-gradient(180deg, #1b4250, #103040); border-bottom: 1px solid var(--steel-dim); }
+.mt-title { flex: 1; font-family: 'Chakra Petch'; font-weight: 700; font-size: 13px; letter-spacing: 1px; color: var(--signal-soft); }
+.mt-x { width: 26px; height: 24px; background: transparent; border: 1px solid transparent; color: var(--label); cursor: pointer; }
+.mt-x:hover { color: var(--alert); border-color: var(--alert); }
+.modal-body { padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.modal-body.compact { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.modal-item { display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 11px 13px; cursor: pointer;
+  background: linear-gradient(180deg, var(--deck-2), var(--deck)); border: 1px solid var(--steel-dim); color: var(--label); }
+.modal-item:hover { border-color: var(--signal); background: rgba(63,224,234,.08); }
+.modal-item.dim { opacity: .42; cursor: not-allowed; }
+.mi-t { font-family: 'Chakra Petch'; font-weight: 700; font-size: 13px; color: var(--signal-soft); }
+.mi-d { font-size: 11px; color: var(--label-dim); }
+
+/* 런처 */
+.modal.launcher { width: 440px; }
+.launcher-body { padding: 26px 24px 20px; text-align: center; }
+.launcher-logo { font-family: 'Chakra Petch'; font-weight: 700; font-size: 30px; letter-spacing: 5px; color: var(--signal); text-shadow: 0 0 16px var(--glow); }
+.launcher-logo .slash { color: var(--objective); }
+.launcher-tag { font-size: 12.5px; color: var(--label); margin: 8px 0 20px; line-height: 1.5; }
+.launcher-actions { display: flex; flex-direction: column; gap: 8px; }
+.launch-btn { display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 12px 15px; cursor: pointer;
+  background: linear-gradient(180deg, var(--deck-2), var(--deck)); border: 1px solid var(--steel); color: var(--label); }
+.launch-btn:hover { border-color: var(--signal); background: rgba(63,224,234,.1); }
+.launch-btn.dim { opacity: .4; }
+.lb-t { font-family: 'Chakra Petch'; font-weight: 700; font-size: 15px; color: var(--signal-soft); }
+.lb-d { font-size: 11px; color: var(--label-dim); }
+.launcher-foot { margin-top: 16px; font-size: 11px; color: var(--label-dim); }
+
+/* 엔딩 */
+.ending-box { width: 640px; max-width: 92%; max-height: 88%; overflow-y: auto; padding: 24px; text-align: center;
+  background: linear-gradient(180deg, var(--deck-2), var(--deck)); border: 1px solid var(--signal); box-shadow: 0 0 30px var(--glow); }
+#ending-body { font-family: 'VT323', monospace; font-size: 18px; line-height: 1.4; color: var(--signal-soft); text-align: left; white-space: pre-wrap; margin: 0 0 16px; }
+.ending-btn { background: var(--signal); color: var(--void); border: none; font-family: 'Chakra Petch'; font-weight: 700; padding: 9px 20px; cursor: pointer; }
+
+/* ── 터미널 앱 ── */
+.term-app { flex-direction: column; background: var(--void); }
+.t-screen { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 13px; font-family: 'VT323', monospace; font-size: 18px; line-height: 1.25; color: var(--console); }
+.t-screen.flash { animation: flashbg .22s; }
+.t-output .line { white-space: pre-wrap; word-break: break-word; }
+.t-output .line.cmd-echo { color: var(--signal-soft); }
+.t-output .line.dim { color: var(--label-dim); }
+.t-output .line.success { color: var(--ok); }
+.t-output .line.story { color: var(--story); }
+.t-output .line.objective { color: var(--objective); }
+.t-output .line.logo { color: var(--signal); text-shadow: 0 0 8px var(--glow); font-weight: 700; }
+.t-output .line.ending { color: var(--signal-soft); }
+.t-cmd { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border-top: 1px solid var(--steel-dim); background: var(--deck); }
+.t-prompt { font-family: 'VT323', monospace; font-size: 17px; color: var(--signal); white-space: nowrap; text-shadow: 0 0 6px var(--glow); }
+.t-input { flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: var(--signal-soft);
+  font-family: 'VT323', monospace; font-size: 18px; caret-color: var(--signal); }
+
+/* ── 메신저 앱 ── */
+.msgr-app { background: var(--deck); }
+.m-contacts { width: 134px; flex-shrink: 0; border-right: 1px solid var(--steel-dim); background: var(--void); overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+.m-contact { display: flex; align-items: center; gap: 7px; padding: 8px; cursor: pointer; text-align: left;
+  background: transparent; border: 1px solid transparent; color: var(--label); font-family: 'Chakra Petch'; font-size: 12px; }
+.m-contact:hover { background: rgba(63,224,234,.07); }
+.m-contact.active { border-color: var(--steel); background: rgba(63,224,234,.1); color: var(--signal-soft); }
+.mc-av { color: var(--signal); font-size: 10px; }
+.mc-av.av-wraith { color: var(--wraith); }
+.m-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.m-head { display: flex; align-items: center; justify-content: space-between; height: 34px; padding: 0 12px; border-bottom: 1px solid var(--steel-dim);
+  font-family: 'Chakra Petch'; font-weight: 700; font-size: 12px; letter-spacing: 1px; }
+.m-chan { color: var(--signal); }
+.m-sec { font-size: 10px; color: var(--label-dim); font-weight: 500; }
+.m-thread { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 13px; display: flex; flex-direction: column; gap: 8px; font-family: 'VT323', monospace; font-size: 18px; }
+.m-input { display: flex; gap: 6px; padding: 8px; border-top: 1px solid var(--steel-dim); background: var(--deck-2); }
+.m-input input { flex: 1; min-width: 0; background: var(--void); border: 1px solid var(--steel-dim); color: var(--signal-soft); font-family: 'VT323', monospace; font-size: 16px; padding: 6px 8px; outline: none; }
+.m-input input:focus { border-color: var(--signal); }
+.m-send { background: var(--signal); color: var(--void); border: none; font-family: 'Chakra Petch'; font-weight: 700; font-size: 12px; padding: 0 13px; cursor: pointer; }
+
+/* ── 브라우저 앱 ── */
+.browser-app { flex-direction: column; background: #0a1118; }
+.b-bar { display: flex; align-items: center; gap: 6px; padding: 7px 9px; border-bottom: 1px solid var(--steel-dim); background: var(--deck-2); }
+.b-nav { width: 28px; height: 28px; background: var(--void); border: 1px solid var(--steel-dim); color: var(--signal); cursor: pointer; }
+.b-url { flex: 1; min-width: 0; background: var(--void); border: 1px solid var(--steel-dim); color: var(--signal-soft); font-family: 'VT323', monospace; font-size: 16px; padding: 6px 9px; outline: none; }
+.b-url:focus { border-color: var(--signal); }
+.b-go { background: var(--signal); color: var(--void); border: none; font-family: 'Chakra Petch'; font-weight: 700; font-size: 12px; padding: 0 13px; cursor: pointer; }
+.b-marks { display: flex; gap: 6px; padding: 6px 9px; overflow-x: auto; border-bottom: 1px solid var(--steel-dim); background: var(--deck); }
+.b-mark { white-space: nowrap; background: transparent; border: 1px solid var(--steel-dim); color: var(--label); font-family: 'VT323', monospace; font-size: 14px; padding: 3px 9px; cursor: pointer; }
+.b-mark:hover { border-color: var(--signal); color: var(--signal); }
+.b-page { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; }
+.b-home { text-align: center; padding-top: 8vh; color: var(--label-dim); }
+.b-logo { font-family: 'Chakra Petch'; font-weight: 700; font-size: 28px; letter-spacing: 4px; color: var(--signal); text-shadow: 0 0 14px var(--glow); margin-bottom: 12px; }
+.b-hint { font-size: 13px; line-height: 1.6; }
+.b-doc-url { font-family: 'VT323', monospace; font-size: 13px; color: var(--label-dim); border-bottom: 1px dashed var(--steel-dim); padding-bottom: 6px; margin-bottom: 10px; word-break: break-all; }
+.b-pre { font-family: 'VT323', monospace; font-size: 16px; line-height: 1.4; color: var(--story); white-space: pre-wrap; word-break: break-word; margin: 0; }
+.b-login { max-width: 360px; }
+.bl-title { font-family: 'Chakra Petch'; font-weight: 700; font-size: 16px; color: var(--signal-soft); margin-bottom: 12px; }
+.b-login label { display: block; font-size: 11px; color: var(--label-dim); margin: 8px 0 3px; font-family: 'Chakra Petch'; }
+.bl-in { width: 100%; background: var(--void); border: 1px solid var(--steel-dim); color: var(--signal-soft); font-family: 'VT323', monospace; font-size: 16px; padding: 7px 9px; outline: none; }
+.bl-in:focus { border-color: var(--signal); }
+.bl-btn { margin-top: 12px; background: var(--signal); color: var(--void); border: none; font-family: 'Chakra Petch'; font-weight: 700; font-size: 13px; padding: 8px 16px; cursor: pointer; }
+
+/* 코드랩 오버레이 위에 (기존 .cl-* 재사용) */
+#codelab { z-index: 100000; }
+
+@keyframes flashbg { 0% { background: rgba(63,224,234,.18); } 100% { background: var(--void); } }
+
