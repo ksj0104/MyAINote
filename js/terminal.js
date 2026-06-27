@@ -502,6 +502,13 @@
       if (this.inputEl) { this.inputEl.disabled = true; this.inputEl.placeholder = '◉ 보안 채널 수신 중…  (Enter: 건너뛰기)'; }
       const cb = document.getElementById('command-bar'); if (cb) cb.classList.add('locked');
     }
+    // 미션을 벗어날 때(메뉴 복귀 등) 잠금·메신저 큐를 강제 해제 — 잠금이 메뉴까지 새는 것 방지
+    _exitMissionLock() {
+      this._msgrReset();                 // 진행 중이던 브리핑 큐/타이머/드레인 콜백 정지
+      this.inputLocked = false;
+      if (this.inputEl) { this.inputEl.disabled = false; this.inputEl.placeholder = '명령을 입력하고 Enter…'; }
+      const cb = document.getElementById('command-bar'); if (cb) cb.classList.remove('locked');
+    }
     // 보안 채널 전송 완료 → 터미널 활성화
     unlockTerminal() {
       this.inputLocked = false;
@@ -577,7 +584,7 @@
 
     // 메인 타이틀 화면: 새 게임 / 이어하기 / 미션 선택 / 그 외 모드
     showMenu(game) {
-      this.hideOverlays(); this.setMode('terminal'); this.clear();
+      this.hideOverlays(); this._exitMissionLock(); this.setMode('terminal'); this.clear();
       const scenIdx = (game && game.scenarioIndex) || 0;
       const total = (window.LEVELS || []).length;
       const hasSave = scenIdx > 0;
@@ -593,7 +600,7 @@
 
     // 미션 선택 화면 (지난 미션 다시풀기)
     showMissionSelect(game) {
-      this.hideOverlays(); this.setMode('terminal'); this.clear();
+      this.hideOverlays(); this._exitMissionLock(); this.setMode('terminal'); this.clear();
       const scenIdx = (game && game.scenarioIndex) || 0;
       const levels = window.LEVELS || [];
       this.setHero('MISSION <span class="hero-slash">·</span> SELECT', '클리어한 미션을 다시 풀기 — 복습은 진행도에 영향 없음.',
@@ -605,7 +612,7 @@
 
     // '그 외 모드' 서브메뉴: 학습 / 코드랩 / 워게임 / 뒤로
     showModesMenu(game) {
-      this.hideOverlays(); this.setMode('terminal'); this.clear();
+      this.hideOverlays(); this._exitMissionLock(); this.setMode('terminal'); this.clear();
       const solvedW = (game && game.wargameSolved && game.wargameSolved.size) || 0;
       const solvedC = (game && game.codelabSolved && game.codelabSolved.size) || 0;
       this.setHero('TRAINING', '스토리 외 훈련·도전 모드 — 골라서 진행하라.',
