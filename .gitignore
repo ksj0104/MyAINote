@@ -14,3 +14,5 @@ progress.txt
 # ── 스크린샷 / 임시 산출물 ──
 *.png
 .playwright-mcp/
+
+.superpowers/
