@@ -518,13 +518,37 @@
           : '✔ ─── MISSION COMPLETE ─── ✔';
         t.appendStory(banner, lvl.success);                    // 완료/디브리핑 → 위쪽 스토리 창
         t.println('  ' + banner, 'success');                   // 터미널에도 짧게 표시
+        if (lvl.success) String(lvl.success).split('\n').forEach(l => t.typeln ? t.typeln('  ' + l, 'story') : t.println('  ' + l, 'story'));
+        t.println('');
+        t.println('  ▶ 아무 키나 누르면 계속합니다', 'objective');
         t.flashClear();
-        setTimeout(() => {
+        this.waitForContinue(() => {
           this.challengeLoaded = false;
           if (isReplay) { this.replay = false; this.showMissionSelect(); }
           else this.advance();
-        }, 1500);
+        });
       }, 250);
+    }
+
+    waitForContinue(done) {
+      if (typeof document === 'undefined' || !document.addEventListener) { done(); return; }
+      let finished = false;
+      const input = document.getElementById && document.getElementById('cmd-input');
+      const go = (e) => {
+        if (finished) return;
+        finished = true;
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
+        document.removeEventListener('keydown', onKey, true);
+        document.removeEventListener('click', onClick, true);
+        if (input) input.removeEventListener('keydown', onKey, true);
+        done();
+      };
+      const onKey = (e) => go(e);
+      const onClick = (e) => go(e);
+      document.addEventListener('keydown', onKey, true);
+      document.addEventListener('click', onClick, true);
+      if (input) input.addEventListener('keydown', onKey, true);
     }
 
     /* ---------- 힌트/목록/테마 ---------- */
