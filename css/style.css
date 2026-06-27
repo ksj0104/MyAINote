@@ -750,3 +750,69 @@ body[data-overlay="academy"] #window-layer,
 body[data-overlay="academy"] #mission-widget,
 body[data-overlay="academy"] #desk-icons { visibility: hidden; }
 
+/* ░░ ACADEMY 무대 애니메이션 ░░ */
+.acad-stage .vz { padding: 10px 12px; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; }
+.acad-stage .vz-cap { color: var(--ok); font-size: 15px; }
+.acad-stage .vz-leg { margin-top: auto; font-size: 13px; color: var(--label-dim); }
+
+/* 파일시스템 */
+.vz-tree { font-size: 16px; line-height: 1.5; }
+.vz-row { opacity: .5; padding: 0 4px; border-radius: 3px; }
+.vz-row b { color: var(--signal); }
+.vz-row.match i { color: #ffd166; font-style: normal; }
+.playing .vz-row { animation: vzScan 5.5s linear infinite; }
+.playing .vz-row.match { animation: vzScan 5.5s linear infinite, vzMatch 5.5s ease-in-out infinite; }
+.vz-row.s1{animation-delay:0s}.vz-row.s2{animation-delay:.35s}.vz-row.s3{animation-delay:.7s}
+.vz-row.s4{animation-delay:1.05s}.vz-row.s5{animation-delay:1.4s}.vz-row.s6{animation-delay:1.75s}
+.vz-row.s7{animation-delay:2.1s}.vz-row.s8{animation-delay:2.45s}
+@keyframes vzScan { 0%,6%{opacity:.5;background:transparent} 9%,13%{opacity:1;background:#16304a} 16%,100%{opacity:.7;background:transparent} }
+@keyframes vzMatch { 0%,40%{box-shadow:none} 50%,92%{box-shadow:0 0 10px var(--signal);background:#0c2433} 100%{box-shadow:none} }
+
+/* 네트워크 */
+.vz-topo { position: relative; flex: 1; }
+.vz-topo svg { position: absolute; inset: 0; }
+.vz-topo .ln { stroke: var(--signal); stroke-width: 1; opacity: .25; stroke-dasharray: 3 3; }
+.vz-sweep { position: absolute; left: 0; right: 0; height: 2px; background: linear-gradient(90deg,transparent,var(--signal),transparent); box-shadow: 0 0 10px var(--signal); }
+.playing .vz-sweep { animation: vzSweep 4s ease-in-out infinite; }
+@keyframes vzSweep { 0%{top:6%} 50%{top:90%} 100%{top:6%} }
+.vz-host { position: absolute; width: 52px; text-align: center; opacity: .5; }
+.vz-host .bx { width: 26px; height: 26px; margin: 0 auto; border: 1px solid var(--signal); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--void); background: var(--signal); box-shadow: 0 0 8px var(--signal); }
+.vz-host .pt { font-size: 10px; color: #ffd166; height: 11px; }
+.vz-host .ip { font-size: 11px; color: var(--label); }
+.playing .vz-host { animation: vzPop 4s ease-out infinite; }
+.vz-host.h1{left:10%;top:16%;animation-delay:.6s}.vz-host.h2{left:38%;top:50%;animation-delay:1.3s}
+.vz-host.h3{left:70%;top:18%;animation-delay:2s}.vz-host.h4{left:55%;top:74%;animation-delay:2.6s}
+@keyframes vzPop { 0%,10%{opacity:.3} 18%{transform:scale(1.25)} 25%,100%{opacity:1;transform:scale(1)} }
+
+/* 암호 */
+.vz-bytes { display: flex; flex-wrap: wrap; gap: 6px; font-size: 22px; }
+.vz-byte { position: relative; display: inline-block; width: 22px; height: 30px; }
+.vz-byte .b-from, .vz-byte .b-to { position: absolute; left: 0; right: 0; text-align: center; }
+.vz-byte .b-from { color: var(--label-dim); }
+.vz-byte .b-to { color: var(--signal); opacity: 0; }
+.playing .vz-byte .b-from { animation: vzFromOut 2.5s ease-in-out infinite; }
+.playing .vz-byte .b-to { animation: vzToIn 2.5s ease-in-out infinite; }
+@keyframes vzFromOut { 0%,20%{opacity:1} 45%,100%{opacity:0} }
+@keyframes vzToIn { 0%,25%{opacity:0;transform:translateY(-6px)} 50%,100%{opacity:1;transform:translateY(0)} }
+
+/* 크래킹 */
+.vz-stream { flex: 1; overflow: hidden; font-size: 16px; line-height: 1.6; }
+.vz-word { opacity: .35; color: var(--label); }
+.vz-word.hit { color: var(--ok); } .vz-word.hit i { color: #ffd166; font-style: normal; }
+.playing .vz-word { animation: vzWord 3s ease-in-out infinite; }
+.playing .vz-word.hit { animation: vzWordHit 3s ease-in-out infinite; }
+@keyframes vzWord { 0%{opacity:.15} 50%{opacity:.6} 100%{opacity:.15} }
+@keyframes vzWordHit { 0%,60%{opacity:.3} 72%,100%{opacity:1;text-shadow:0 0 8px var(--ok)} }
+
+/* 무선 */
+.vz-air { position: relative; flex: 1; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; }
+.vz-ap, .vz-cli { text-align: center; color: var(--signal); font-size: 14px; }
+.vz-pkt { position: absolute; top: 50%; width: 8px; height: 8px; border-radius: 50%; background: #ffd166; box-shadow: 0 0 8px #ffd166; }
+.playing .vz-pkt { animation: vzPkt 1.6s linear infinite; }
+.vz-pkt.p1{animation-delay:0s}.vz-pkt.p2{animation-delay:.5s}.vz-pkt.p3{animation-delay:1s}
+@keyframes vzPkt { 0%{left:18%;opacity:0} 10%{opacity:1} 90%{opacity:1} 100%{left:82%;opacity:0} }
+.vz-hs { color: var(--ok); font-size: 14px; } .vz-hs b { color: var(--signal); }
+
+/* 라이트 */
+.vz-badge { color: var(--signal); font-size: 18px; padding: 14px 0; }
+
