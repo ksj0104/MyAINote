@@ -38,7 +38,8 @@ ctx.global = ctx;
 vm.createContext(ctx);
 
 const root = __dirname;
-for (const f of ['filesystem', 'commands', 'levels', 'wargames', 'modes', 'comms', 'game', 'terminal']) {
+// 셸/UI(terminal·os·apps)는 DOM 의존이라 로드 안 함 — win.term 은 아래 Proxy 스텁으로 대체
+for (const f of ['filesystem', 'commands', 'levels', 'wargames', 'modes', 'comms', 'game']) {
   vm.runInContext(fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8'), ctx, { filename: f + '.js' });
 }
 
