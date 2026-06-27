@@ -257,18 +257,19 @@
       ].join('\n'),
       brief: [
         '0xMOTHER> 사람들은 초기 비밀번호를 거의 안 바꿔. 그게 우리에게 문을 열어준다.',
-        '0xMOTHER> 이번 침투 대상은 dev-test FTP, 주소는 10.0.1.5다. 대입할 비밀번호 후보 목록도 작업 디렉터리에 준비해뒀다.',
-        '0xMOTHER> `hydra` 는 사전(wordlist)에 적힌 비번을 하나씩 자동으로 대입하는 무차별 도구야. 낡은 FTP 문에 대고 돌려라.',
+        '0xMOTHER> 작전 노트에는 표적 대역만 남아 있다 — 10.0.1.0/24. 이전에 배운 `nmap` 으로 FTP가 열린 호스트를 먼저 다시 찾아라.',
+        '0xMOTHER> `hydra` 는 사전(wordlist)에 적힌 비번을 하나씩 자동으로 대입하는 무차별 도구야. 찾은 FTP 문에 대고 돌려라.',
         '0xMOTHER> 비번을 찾으면 그 계정으로 `ftp` 접속해. 첫 침투의 맛을 봐.'
       ].join('\n'),
       objective: '대상 FTP 계정의 비밀번호를 찾아 접속하라.',
       steps: [
+        '`nmap 10.0.1.0/24` 로 표적 대역을 스캔해 FTP(21/tcp)가 열린 호스트를 찾는다.',
         '`cat wordlist.txt` 로 대입할 후보 비밀번호 목록을 먼저 확인한다.',
-        '`hydra 10.0.1.5 ftp wordlist.txt` 로 FTP 서비스에 사전 대입 공격을 실행한다.',
+        '`hydra <찾은 IP> ftp wordlist.txt` 로 FTP 서비스에 사전 대입 공격을 실행한다.',
         'hydra 가 출력한 "유효 계정:비번" 조합을 확인한다.',
-        '찾은 자격증명으로 `ftp 10.0.1.5` 접속해 내부 거점을 확보하고, 안의 흔적(loot)을 살핀다.'
+        '찾은 자격증명으로 `ftp <찾은 IP>` 접속해 내부 거점을 확보하고, 안의 흔적(loot)을 살핀다.'
       ],
-      hints: ['`cat wordlist.txt`', '`hydra 10.0.1.5 ftp wordlist.txt`', '찾으면 `ftp 10.0.1.5`'],
+      hints: ['`nmap 10.0.1.0/24` 로 FTP 호스트를 찾는다', '`cat wordlist.txt` 로 사전 확인', '`hydra <찾은 IP> ftp wordlist.txt` 후 `ftp <찾은 IP>`'],
       setup(g) {
         g.cwd = '/home/guest'; g.user = 'guest'; g.ip = '10.0.0.42';
         g.fs = world({ 'wordlist.txt': f('wordlist.txt', '123456\npassword\npassword123\nletmein\nadmin\n', 'rw-r--r--', 'guest') });
@@ -366,8 +367,13 @@
       ],
       hints: ['?file= 파라미터를 조작', '`curl "http://help.helios.corp/download?file=../../../../etc/passwd"`', '시스템 사용자 목록이 나오면 완료'],
       setup(g) {
-        g.fs = world({}, (root) => { root.children.etc.children.passwd = f('passwd', 'root:x:0:0:root:/root:/bin/bash\nhelios:x:1000:1000::/home/helios:/bin/bash\n', 'rw-r--r--', 'root'); });
-        g.cwd = '/home/guest'; g.user = 'guest';
+        g.fs = world({});
+        g.cwd = '/home/guest'; g.user = 'guest'; g.host = 'operator-laptop';
+        g.targetLabel = 'REMOTE WEB help.helios.corp';
+        g.sessionLabel = 'LOCAL SHELL';
+        g.remoteFiles = {
+          '/etc/passwd': 'root:x:0:0:root:/root:/bin/bash\nhelios:x:1000:1000::/home/helios:/bin/bash\n'
+        };
       },
       check(g) { return g.lfiRead === '/etc/passwd'; },
       success: '0xMOTHER> 서버의 심장을 읽었다. 경로 정규화 한 줄을 빼먹은 대가지. 이제 그들의 파일 시스템이 우리에게 열렸다.'

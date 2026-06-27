@@ -639,6 +639,10 @@ reg('curl', 'HTTP 요청(시뮬)', 'curl <url>', ({ args, game }) => {
   const lfi = url.match(/[?&]file=([^&\s]+)/);
   if (lfi) {
     const p = '/' + decodeURIComponent(lfi[1]).replace(/^(\.\.\/|\.\/|\/)+/, '');
+    if (game.remoteFiles && Object.prototype.hasOwnProperty.call(game.remoteFiles, p)) {
+      game.lfiRead = p;
+      return game.remoteFiles[p];
+    }
     const n = game.fs.getNode(p);
     if (n && n.type === 'file') { game.lfiRead = p; game.readFiles && game.readFiles.add(p); return n.content; }
     return `[!] file not found: ${p}`;

@@ -220,6 +220,7 @@
       this.stegoExtracted = false; this.mounted = false; this.dockerEscaped = false; this.tunnelOpen = false;
       this.logScrubbed = null; this.timestomped = null; this.poweredOff = false; this.lfiRead = null;
       this.uploadEndpoint = null; this.webshellUrl = null; this.reverseTarget = null;
+      this.remoteFiles = {}; this.targetLabel = null; this.sessionLabel = null;
       this.user = 'guest'; this.host = 'nullsec-node'; this.cwd = '/home/guest';
       this.fs = new FileSystem(dir('/'));
     }

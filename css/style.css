@@ -279,6 +279,7 @@ body[data-screen="play"] #nav-rail { display: flex; }
  * 모드별 패널 표시
  * ============================================================ */
 body[data-mode="recon"] #targets-panel,
+body[data-mode="recon"] #status-bar,
 body[data-mode="os"] #targets-panel,
 body[data-mode="os"] #fstree-panel { display: flex; }
 body[data-mode="os"] #status-bar { display: flex; }

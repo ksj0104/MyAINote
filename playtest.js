@@ -78,7 +78,7 @@ const S = [
   ['nmap dev-test.helios.corp', 'submit 80'],                                             // S1.07
   ['grep -oE "[a-z.0-9_]+@helios.corp" team.html > emails.txt'],                          // S1.08
   ['nmap -sV dev-test.helios.corp', 'submit vsftpd 2.3.4'],                               // S1.09
-  ['hydra 10.0.1.5 ftp wordlist.txt', 'ftp 10.0.1.5'],                                    // S1.10
+  ['nmap 10.0.1.0/24', 'hydra 10.0.1.5 ftp wordlist.txt', 'ftp 10.0.1.5'],                  // S1.10
   ['curl http://help.helios.corp/robots.txt', 'submit /admin_portal'],                    // S2.01
   ["login admin ' OR '1'='1' --"],                                                        // S2.02
   ["login admin ' UNION SELECT null,user,pass FROM users --"],                            // S2.03
@@ -105,6 +105,13 @@ const S = [
   ['systemctl poweroff -f']                                                               // S4.08
 ];
 S.forEach((lines, i) => ok('Scenario ' + win.LEVELS[i].id + ' ' + win.LEVELS[i].title, playScenario(i, lines)));
+
+// ---------- 원격/로컬 컨텍스트 분리: LFI는 로컬 cat/cd가 아니라 원격 HTTP로만 ----------
+const lfiIdx = win.LEVELS.findIndex(l => l.id === 'S2.04');
+game.appMode = 'scenario'; game.activeSet = win.LEVELS; game.levelIndex = lfiIdx; game.scenarioIndex = lfiIdx;
+game.challengeLoaded = false; game._resetRun(); win.LEVELS[lfiIdx].setup(game); game.cleared = false;
+ok('S2.04 local terminal cannot read remote /etc/passwd directly', /No such file|Permission denied/.test(game.exec('cat /etc/passwd')));
+ok('S2.04 remote LFI reads target /etc/passwd via curl', /root:x:0:0/.test(game.exec('curl "http://help.helios.corp/download?file=../../../../etc/passwd"')) && win.LEVELS[lfiIdx].check(game));
 
 // ---------- 워게임 6 ----------
 const W = [

@@ -132,11 +132,18 @@
       const sb = $('#status-bar');
       if (sb) {
         const depth = (g.connStack && g.connStack.length) || 0;
+        const session = g.sessionLabel || (depth > 0 ? 'REMOTE SHELL' : 'LOCAL SHELL');
+        const webTarget = g.targetLabel || Object.keys(g.web || {})[0] || '';
+        const netTarget = (g.network && g.network[0]) ? `${g.network[0].name} (${g.network[0].ip})` : '';
+        const target = webTarget || netTarget || 'LOCAL FS';
+        const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         sb.innerHTML =
-          `<span class="sb-item">USER <b>${g.user}</b></span>` +
-          `<span class="sb-item">HOST <b>${g.host}</b></span>` +
-          `<span class="sb-item">PWD <b>${g.cwd}</b></span>` +
-          `<span class="sb-item">IP <b>${g.ip || '10.0.0.42'}</b></span>` +
+          `<span class="sb-item">SESSION <b>${esc(session)}</b></span>` +
+          `<span class="sb-item">TARGET <b>${esc(target)}</b></span>` +
+          `<span class="sb-item">USER <b>${esc(g.user)}</b></span>` +
+          `<span class="sb-item">HOST <b>${esc(g.host)}</b></span>` +
+          `<span class="sb-item">PWD <b>${esc(g.cwd)}</b></span>` +
+          `<span class="sb-item">IP <b>${esc(g.ip || '10.0.0.42')}</b></span>` +
           `<span class="sb-item">HOPS <b>${depth}</b></span>`;
       }
 
