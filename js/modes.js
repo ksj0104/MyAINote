@@ -42,7 +42,7 @@
   // 명령 → 시각화 패밀리 (5 정교; 그 외는 familyOf 가 'light' 폴백)
   const VIZ_FAMILY = {
     ls: 'fs', cd: 'fs', pwd: 'fs', cat: 'fs', echo: 'fs', grep: 'fs', find: 'fs',
-    mkdir: 'fs', touch: 'fs', cp: 'fs', mv: 'fs', rm: 'fs',
+    mkdir: 'fs', touch: 'fs', cp: 'fs', mv: 'fs', rm: 'fs', file: 'fs',
     ifconfig: 'net', ping: 'net', nmap: 'net', netstat: 'net', arp: 'net', route: 'net',
     ssh: 'net', scp: 'net', wget: 'net', curl: 'net', exit: 'net', disconnect: 'net',
     base64: 'crypto', rot13: 'crypto', caesar: 'crypto', xor: 'crypto', vigenere: 'crypto',
@@ -58,6 +58,7 @@
     cat: 'cat secret.txt    # 파일 내용 출력',
     grep: "grep -ri pass .  # 현재 폴더에서 'pass' 대소문자무시 재귀 검색",
     find: 'find / -name "*.key"   # 이름이 .key 로 끝나는 파일 찾기',
+    file: 'file secret.bin    # 확장자가 아니라 내용으로 형식 판별',
     chmod: 'chmod 644 file   # rw-r--r-- 권한 부여 (8진수)',
     sudo: 'sudo cat /etc/shadow   # 관리자 권한으로 실행',
     nmap: 'nmap -sV 10.0.0.0/24   # 대역 스캔 + 서비스 버전',
@@ -79,13 +80,14 @@
 
   // 명령별 상세 학습 자료 (설명·예제 여러 개·팁·관련명령)
   const DETAILS = {
-    ls: { desc: '디렉터리 안의 파일/폴더를 나열한다. 가장 먼저, 가장 자주 쓰는 명령.', ex: ['ls', 'ls -a        # 숨김(.)파일까지', 'ls -l        # 권한·소유자·크기 상세', 'ls -la /etc  # 둘 다 + 특정 경로'], tip: '-a 는 .으로 시작하는 숨김파일을, -l 은 권한을 보여준다.', see: ['cd', 'cat', 'find'] },
-    cd: { desc: '작업 디렉터리를 옮긴다. 경로는 절대(/etc) 또는 상대(../docs)로 지정.', ex: ['cd /var/log', 'cd ..        # 상위로', 'cd ~         # 홈으로', 'cd -         # (셸에선 직전 경로)'], tip: '~ 는 홈, .. 는 상위, . 은 현재. 이동 후 pwd 로 확인.', see: ['ls', 'pwd'] },
+    ls: { desc: '디렉터리 안의 파일/폴더를 나열한다. 가장 먼저, 가장 자주 쓰는 명령 — 첫 정찰은 늘 ls 로 시작한다.', ex: ['ls', 'ls -a          # 숨김(.)파일까지', 'ls -l          # 권한·소유자·크기·시간 상세', 'ls -la /etc    # 둘 다 + 특정 경로', 'ls -lt         # 최근 수정 순', 'ls -lS         # 크기 큰 순'], tip: '-a 숨김, -l 상세(권한 rwx·소유자·크기·시간), -t 시간순, -S 크기순, -r 역순. -la 로 .ssh 같은 숨김 디렉터리부터 확인하라.', see: ['cd', 'cat', 'find', 'file'] },
+    cd: { desc: '작업 디렉터리를 옮긴다. 경로는 절대(/etc)나 상대(../docs)로 지정 — 어디로 갈지가 곧 어디를 뒤질지다.', ex: ['cd /var/log', 'cd ..          # 상위로', 'cd ../../tmp   # 상위로 두 번 뒤 tmp', 'cd ~           # 홈으로', 'cd ~/docs      # 홈 아래 docs', 'cd -           # (셸에선 직전 경로)'], tip: '~ 홈, .. 상위, . 현재, / 루트. 절대경로는 /로 시작. 이동 뒤 pwd 로 위치를, ls 로 내용을 확인하라.', see: ['ls', 'pwd', 'find'] },
     pwd: { desc: '현재 작업 중인 절대 경로를 출력한다. 길을 잃었을 때.', ex: ['pwd'], see: ['cd', 'ls'] },
     cat: { desc: '파일 내용을 화면에 그대로 출력한다. 단서·설정·플래그 읽기의 기본.', ex: ['cat flag.txt', 'cat /etc/passwd', 'cat a.txt b.txt   # 여러 파일 연달아'], tip: '권한이 없으면 Permission denied — sudo 나 chmod 가 필요할 수 있다.', see: ['grep', 'strings', 'xxd'] },
     echo: { desc: '문자열을 출력한다. 리다이렉션과 함께 파일에 쓰기(공격: 백도어 삽입)에도 쓴다.', ex: ['echo hello', "echo 'data' > file.txt    # 새 파일로 저장", "echo 'line2' >> file.txt   # 뒤에 추가"], tip: '> 덮어쓰기, >> 추가. 권한 있는 위치에만 쓸 수 있다.', see: ['cat', 'cp'] },
     grep: { desc: '파일/디렉터리에서 패턴(문자열·정규식)과 일치하는 줄을 찾는다. 대량 로그·소스에서 단서 추출의 핵심.', ex: ['grep error app.log', 'grep -i password *.txt   # 대소문자 무시', 'grep -r flag ./src       # 디렉터리 재귀'], tip: '-i 대소문자무시, -r 재귀. 비번·키·flag 사냥에 필수.', see: ['find', 'cat', 'strings'] },
-    find: { desc: '이름/조건으로 파일을 탐색한다. 어디 있는지 모를 때 트리 전체를 뒤진다.', ex: ['find / -name "*.key"', 'find . -name flag.txt', 'find /home -name "*.conf"'], tip: '-name 에 * 와일드카드 사용 가능. grep 과 짝으로 자주 쓴다.', see: ['grep', 'ls'] },
+    find: { desc: '이름·권한·종류 등 조건으로 파일을 트리 전체에서 탐색한다. 어디 있는지 모를 때의 정찰 도구.', ex: ['find / -name "*.key"', 'find . -name flag.txt', 'find /home -name "*.conf"', 'find / -perm -4000      # SUID 실행파일(권한상승 단서)', 'find / -type f -name "*.bak"'], tip: '-name 에 * ? 와일드카드. -perm -4000 은 SUID(권한상승 사냥), -type f/d 로 파일/폴더만. 찾은 뒤 cat/grep 으로 내용을 본다.', see: ['grep', 'ls', 'file'] },
+    file: { desc: '파일의 실제 형식을 내용(매직 바이트)으로 판별한다. 확장자를 못 믿을 때, 압축·바이너리 여부를 먼저 확인하는 용도.', ex: ['file welcome.txt    # → ASCII text', 'file package.bz2     # → bzip2 compressed data', 'file dump.bin'], tip: 'ASCII text 면 cat 으로, 압축이면 bunzip2/gunzip/tar 로 해제, 바이너리면 strings/xxd 로 분석한다.', see: ['strings', 'xxd', 'cat'] },
     mkdir: { desc: '새 디렉터리를 만든다.', ex: ['mkdir loot', 'mkdir /tmp/work'], see: ['touch', 'rm', 'cd'] },
     touch: { desc: '빈 파일을 만든다(또는 타임스탬프 갱신).', ex: ['touch notes.txt'], see: ['mkdir', 'echo', 'rm'] },
     cp: { desc: '파일을 복사한다. 원격에서 빼낸 데이터를 안전한 곳에 보관할 때.', ex: ['cp a.txt b.txt', 'cp secret.txt /tmp/'], see: ['mv', 'scp', 'rm'] },
@@ -217,18 +219,24 @@
       const c = C[name];
       if (!c) return `learn: '${name}' 명령을 찾을 수 없다. \`lessons\` 로 목록을 보거나 \`learn all\``;
       const cat = (CATEGORIES.find(([, cmds]) => cmds.includes(name)) || ['기타'])[0];
+      const d = DETAILS[name] || {};
       let out = `╭─ ${name} ─────────────────────────────\n`;
       out += `│ 분류 : ${cat}\n`;
-      out += `│ 설명 : ${c.desc}\n`;
+      out += `│ 설명 : ${d.desc || c.desc}\n`;
       out += `│ 사용 : ${c.usage}\n`;
-      out += `│ 예제 : ${EXAMPLES[name] || c.usage}\n`;
+      // 예제: 상세 자료의 다중 예제 우선, 없으면 한 줄 예제
+      const exs = (d.ex && d.ex.length) ? d.ex : [EXAMPLES[name] || c.usage];
+      out += exs.length > 1 ? `│ 예제 :\n` : `│ 예제 : ${exs[0]}\n`;
+      if (exs.length > 1) for (const e of exs) out += `│    ${e}\n`;
       const opts = window.COMMAND_OPTS && window.COMMAND_OPTS[name];
       if (opts && opts.length) {
         out += `│ 옵션 :\n`;
-        for (const [tok, d] of opts) out += `│    ${String(tok).padEnd(18)} ${d}\n`;
+        for (const [tok, od] of opts) out += `│    ${String(tok).padEnd(18)} ${od}\n`;
         out += `│    ${'─'.repeat(18)}\n`;
         out += `│    ★ = 이 시뮬레이터에서 동작 · 그 외는 실제 유닉스 기준 설명(학습용)\n`;
       }
+      if (d.tip) out += `│ 팁   : ${d.tip}\n`;
+      if (d.see && d.see.length) out += `│ 관련 : ${d.see.join(', ')}\n`;
       out += `╰───────────────────────────────────────\n`;
       out += `직접 해보기 → 연습실에서 \`${name}\` 를 입력해보라.`;
       return out;

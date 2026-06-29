@@ -183,7 +183,13 @@ const OPTS = {
   login: [['<user>', '★ 사용자명'], ['<payload>', "★ SQLi 페이로드(예: ' OR '1'='1' -- / ' UNION SELECT ...)"]],
   tcpdump: [['-r <pcap>', '★ 읽을 캡처 파일(read)'], ['[필터]', '★ 포함 문자열 필터(예: Cookie)'], ['-w <file>', '캡처를 파일로 저장(write)'], ['-n', '이름 해석 없이 숫자로'], ['-i <iface>', '청취할 인터페이스']],
   nc: [['-lvnp <port>', '★ 리버스 셸 리스너 대기(listen/verbose/numeric/port)'], ['-l', '리슨 모드(연결을 기다림)'], ['-v', '상세 출력(verbose)'], ['-n', '이름 해석 없이 숫자'], ['-p <port>', '포트 지정'], ['<host> <port>', '대상에 직접 연결(클라이언트)']],
-  file: [['<file>', '★ 내용을 보고 파일 형식 식별(확장자 무관)']],
+  file: [
+    ['<file>', '★ 형식을 식별할 파일(확장자가 아니라 내용으로 판단)'],
+    ['(결과) ASCII text', '사람이 읽는 텍스트 → cat 으로 열기'],
+    ['(결과) ~ compressed data', 'bzip2/gzip/tar 등 압축 → bunzip2/gunzip/tar 로 해제'],
+    ['-i', '실제 유닉스: MIME 타입으로 출력(text/plain 등)'],
+    ['-b', '실제 유닉스: 파일명 없이 형식만 출력(brief)']
+  ],
   bunzip2: [['<file.bz2>', '★ bzip2 한 겹 해제'], ['-k', '원본 유지(keep)']],
   gunzip: [['<file.gz>', '★ gzip 한 겹 해제'], ['-k', '원본 유지(keep)']],
   tar: [

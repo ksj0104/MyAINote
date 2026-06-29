@@ -39,7 +39,7 @@ vm.createContext(ctx);
 
 const root = __dirname;
 // 셸/UI(terminal·os·apps)는 DOM 의존이라 로드 안 함 — win.term 은 아래 Proxy 스텁으로 대체
-for (const f of ['filesystem', 'commands', 'levels', 'wargames', 'modes', 'comms', 'game']) {
+for (const f of ['filesystem', 'commands', 'levels', 'wargames', 'modes', 'comms', 'game', 'bandit']) {
   vm.runInContext(fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8'), ctx, { filename: f + '.js' });
 }
 
@@ -199,6 +199,10 @@ game.exec('echo alpha > b.txt');
 ok('Shell pipe: cat file | grep pattern', game.exec('cat a.txt | grep beta') === 'beta');
 ok('Shell glob: cat *.txt expands matching files', game.exec('cat *.txt | grep alpha | wc -l').trim() === '2');
 ok('Shell stdin filters: head reads pipeline input', game.exec('cat a.txt | head -n 1') === 'alpha');
+ok('Shell input redirect: cat < file == cat file', game.exec('cat < a.txt') === game.exec('cat a.txt'));
+ok('Shell input redirect feeds stdin: grep alpha < a.txt', game.exec('grep alpha < a.txt') === 'alpha');
+ok('Shell input redirect chains into pipe: cat < a.txt | grep beta', game.exec('cat < a.txt | grep beta') === 'beta');
+ok('Shell input redirect missing file errors', /No such file/.test(game.exec('cat < nope.txt')));
 game.exec('cd /tmp');
 game.exec('cd ~');
 ok('Shell home expansion follows current user', game.cwd === '/home/student');
@@ -385,6 +389,42 @@ win.Academy.enter(game);
 ok('AcademyUI 있을 때 enter 는 AcademyUI.open 으로 위임', opened === game);
 ok('위임해도 샌드박스 상태는 여전히 셋업됨', game.user === 'student' && !!game.fs);
 delete win.AcademyUI;
+
+// ---------- BANDIT: 12레벨 단계별 도전 ----------
+ok('Bandit 모듈 로드 + 12레벨', !!win.Bandit && win.Bandit.LEVELS.length === 12);
+ok('Bandit 레벨마다 pass/build/objective 존재',
+  win.Bandit.LEVELS.every(L => typeof L.pass === 'string' && typeof L.build === 'function' && typeof L.objective === 'string'));
+// 각 레벨을 의도한 명령으로 풀고 submit → 순서대로 해제되는지
+const BANDIT_SOL = [
+  ['ls', 'cat readme'],
+  ['cd vault', 'cat /home/bandit2/vault/pass.txt'],
+  ['ls -a', 'cat .secret'],
+  ['ls', 'cat "secret data.txt"'],
+  ['find . -name target.key', 'cat a/b/c/target.key'],
+  ['grep PASS data.log'],
+  ['file notes', 'cat notes'],
+  ['grep -r KEY .'],
+  ['base64 -d enc.txt'],
+  ['strings blob.bin'],
+  ['sudo cat /root/flag.txt'],
+  ['bunzip2 package.bz2', 'tar -xvf payload.tar', 'gunzip flag.txt.gz', 'cat flag.txt']
+];
+game.banditMax = 0;
+game.appMode = 'bandit';   // enterBandit() 가 실제로 설정하는 모드 (submit 라우팅에 필요)
+win.Bandit.enter(game);
+let banditOk = true, banditErr = '';
+for (let i = 0; i < BANDIT_SOL.length; i++) {
+  if (game.banditAt !== i) { banditOk = false; banditErr = '레벨 ' + (i + 1) + ' 진입 실패(at ' + game.banditAt + ')'; break; }
+  const pass = win.Bandit.LEVELS[i].pass;
+  let found = false;
+  for (const c of BANDIT_SOL[i]) { if (String(game.exec(c) || '').indexOf(pass) !== -1) found = true; }
+  if (!found) { banditOk = false; banditErr = 'L' + (i + 1) + ': 의도한 명령으로 비번을 못 찾음'; break; }
+  game.exec('submit ' + pass);
+  if ((game.banditMax || 0) < i + 1) { banditOk = false; banditErr = 'L' + (i + 1) + ': submit 후 미해제'; break; }
+}
+ok('Bandit: 12레벨 모두 의도한 명령으로 풀려 순서대로 해제', banditOk && game.banditMax === 12, banditErr);
+ok('Bandit: 틀린 비번은 거부', /틀렸다/.test(win.Bandit.handle('submit WRONG', (game.banditAt = 0, game)) || ''));
+ok('Bandit: 잠긴 레벨 이동 거부', (game.banditMax = 0, /잠겨/.test(win.Bandit.goto(game, 5) || '')));
 
 // ---------- 보고 ----------
 console.log(results.join('\n'));

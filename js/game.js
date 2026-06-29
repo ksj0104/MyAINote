@@ -32,7 +32,8 @@
         localStorage.setItem(SAVE_KEY, JSON.stringify({
           levelIndex: this.scenarioIndex || 0, theme: this.theme,
           wargame: [...(this.wargameSolved || [])], codelab: [...(this.codelabSolved || [])],
-          academy: [...(this.academyDone || [])], drill: [...(this.drillSolved || [])]
+          academy: [...(this.academyDone || [])], drill: [...(this.drillSolved || [])],
+          bandit: this.banditMax || 0
         }));
       } catch (e) {}
     }
@@ -76,6 +77,7 @@
       this.codelabSolved = new Set(saved && saved.codelab || []);
       this.academyDone = new Set(saved && saved.academy || []);
       this.drillSolved = new Set(saved && saved.drill || []);
+      this.banditMax = saved && Number.isInteger(saved.bandit) ? saved.bandit : 0;
       window.term.bootSequence(() => this.showMenu());
     }
 
@@ -132,8 +134,9 @@
       if (key === '1' || key === 'academy' || key === '학습') return this.menuSelect('academy');
       if (key === '2' || key === 'codelab' || key === '코드랩') return this.menuSelect('codelab');
       if (key === '3' || key === 'wargame' || key === '워게임') return this.menuSelect('wargame');
+      if (key === '4' || key === 'bandit' || key === '단계' || key === '도전') return this.menuSelect('bandit');
       if (key === '0' || key === 'back' || key === 'b' || key === '뒤로' || key === 'menu') return this.menuSelect('back');
-      return '입력: 1 학습 · 2 코드랩 · 3 워게임 · 0 뒤로';
+      return '입력: 1 학습 · 2 코드랩 · 3 워게임 · 4 단계별 도전 · 0 뒤로';
     }
     missionsMenuInput(key) {
       if (key === '0' || key === 'back' || key === 'b' || key === '뒤로' || key === 'menu') return this.menuSelect('back');
@@ -151,6 +154,7 @@
         case 'academy': return this.enterAcademy();
         case 'codelab': return this.enterCodelab();
         case 'wargame': return this.enterWargame();
+        case 'bandit': return this.enterBandit();
         case 'back': this.showMenu(); return '';
         case 'locked': return '🔒 아직 잠긴 미션이다. 순서대로 클리어하면 열린다.';
       }
@@ -181,6 +185,7 @@
 
     enterAcademy() { this.appMode = 'academy'; this.activeSet = null; document.body.setAttribute('data-screen', 'play'); window.Academy.enter(this); return ''; }
     enterCodelab() { this.appMode = 'codelab'; this.activeSet = null; window.CodeLab.enter(this); return ''; }
+    enterBandit() { this.appMode = 'bandit'; this.activeSet = null; document.body.setAttribute('data-screen', 'play'); window.term.hideOverlays(); window.Bandit.enter(this); return ''; }
 
     enterScenario(index) {
       this.appMode = 'scenario';
@@ -346,6 +351,10 @@
           const r = window.Academy.handle(raw, this);
           if (r !== null && r !== undefined) return r;   // null이면 아래로 떨어져 샌드박스에서 실행
         }
+        if (this.appMode === 'bandit' && window.Bandit) {
+          const r = window.Bandit.handle(raw, this);
+          if (r !== null && r !== undefined) return r;   // submit/levels/hint 등만 가로채고 나머진 샌드박스 실행
+        }
       }
 
       const pipeParts = this.splitTopLevel(raw, '|');
@@ -373,6 +382,22 @@
       }
 
       let tokens = this.tokenize(raw);
+
+      // 입력 리다이렉션: cmd < file  → 파일 내용을 stdin 으로 전달
+      const ii = tokens.findIndex(t => t === '<');
+      if (ii !== -1) {
+        const src = tokens[ii + 1];
+        if (!src) return 'syntax error near `<` (입력 파일 필요)';
+        const abs = this.fs.resolve(src, this.cwd);
+        const node = this.fs.getNode(abs);
+        if (!node) return `${tokens[0]}: ${src}: No such file or directory`;
+        if (node.type === 'dir') return `${tokens[0]}: ${src}: Is a directory`;
+        if (!this.fs.canRead(node, this.user)) return `${tokens[0]}: ${src}: Permission denied`;
+        if (this.readFiles) this.readFiles.add(abs);
+        stdin = node.content == null ? '' : String(node.content);
+        tokens = tokens.slice(0, ii).concat(tokens.slice(ii + 2));
+      }
+
       let redirect = null;
       const ri = tokens.findIndex(t => t === '>' || t === '>>');
       if (ri !== -1) {
