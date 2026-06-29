@@ -23,37 +23,26 @@
       this.renderSidebar();
       this.renderLesson();
       this._clearConsole();
+      this._print('ACADEMY TERMINAL READY', 'ok');
+      this._print("왼쪽에서 명령을 골라 학습 · 명령을 직접 입력해 실습 · 'help' 로 상세 사용법", 'echo');
       const inp = $('#acad-input'); if (inp) setTimeout(() => inp.focus(), 0);
-    },
-
-    // 진입 가능 최대 인덱스 = 앞에서부터 연속 완료한 개수(그 다음 하나까지 해제)
-    _maxUnlockedIndex() {
-      const order = A().order, done = this.game.academyDone || new Set();
-      let i = 0;
-      while (i < order.length && done.has(order[i])) i++;
-      return i;
     },
 
     renderSidebar() {
       const side = $('#acad-side'); if (!side) return;
       const order = A().order, done = this.game.academyDone || new Set();
-      const maxIdx = this._maxUnlockedIndex();
-      const idxOf = c => order.indexOf(c);
       let html = '';
       for (const [name, cmds] of A().categories) {
         html += `<div class="acad-cat">▸ ${name}</div>`;
         for (const c of cmds) {
-          const di = idxOf(c);
-          const isDone = done.has(c), isCur = c === this.cur, locked = di > maxIdx;
-          const cls = isCur ? 'current' : isDone ? 'done' : locked ? 'locked' : '';
-          const mark = isDone ? '✔' : isCur ? '▶' : locked ? '🔒' : '○';
-          html += `<button class="acad-li ${cls}" data-cmd="${c}"${locked ? ' disabled' : ''}>${mark} ${c}</button>`;
+          const isDone = done.has(c), isCur = c === this.cur;
+          const cls = isCur ? 'current' : isDone ? 'done' : '';
+          const mark = isDone ? '✔' : isCur ? '▶' : '○';
+          html += `<button class="acad-li ${cls}" data-cmd="${c}">${mark} ${c}</button>`;
         }
       }
       side.innerHTML = html;
-      side.querySelectorAll('.acad-li').forEach(b => b.addEventListener('click', () => {
-        if (!b.disabled) this.go(b.dataset.cmd);
-      }));
+      side.querySelectorAll('.acad-li').forEach(b => b.addEventListener('click', () => this.go(b.dataset.cmd)));
       const prog = $('#acad-prog'); if (prog) prog.textContent = `${done.size} / ${order.length}`;
     },
 
@@ -72,8 +61,7 @@
     },
 
     go(cmd) {
-      const i = A().order.indexOf(cmd);
-      if (i < 0 || i > this._maxUnlockedIndex()) return; // 잠긴 명령은 진입 불가
+      if (A().order.indexOf(cmd) < 0) return; // 알 수 없는 명령만 무시 (자유 선택)
       this.cur = cmd;
       this.renderSidebar();
       this.renderLesson();
@@ -102,11 +90,20 @@
       const raw = inp.value; inp.value = '';
       if (!raw.trim()) return;
       this._print(`${this.game.user || 'student'}@${this.game.host || 'academy'}:~$ ${raw}`, 'echo');
+      const first = raw.trim().split(/\s+/)[0].toLowerCase();
+      // help / man / ? → 현재(또는 인자로 지정한) 명령의 자세한 사용법
+      if (first === 'help' || first === 'man' || first === '?') {
+        const arg = raw.trim().split(/\s+/)[1];
+        const target = arg || this.cur;
+        const txt = (window.Academy && window.Academy.learn) ? window.Academy.learn(target) : '';
+        this._print(txt || '설명을 불러올 수 없습니다.');
+        inp.focus();
+        return;
+      }
       let out = '';
       try { out = this.game.exec(raw); } catch (e) { out = 'err: ' + e.message; }
       if (out) this._print(out);
       // 실습 무대 리플레이: 입력 명령의 패밀리로 무대 재생
-      const first = raw.trim().split(/\s+/)[0].toLowerCase();
       const stage = $('#acad-stage');
       if (stage && window.AcademyViz && (window.COMMANDS || {})[first]) {
         window.AcademyViz.render(A().familyOf(first), raw.trim(), stage);
@@ -116,7 +113,7 @@
         this.game.academyDone = this.game.academyDone || new Set();
         this.game.academyDone.add(this.cur);
         if (this.game.save) this.game.save();
-        this._print(`  ✔ '${this.cur}' 실습 완료 — 다음 명령이 열렸습니다.`, 'ok');
+        this._print(`  ✔ '${this.cur}' 실습 완료`, 'ok');
         this.renderSidebar();
         const nextBtn = $('#acad-next'); if (nextBtn) nextBtn.hidden = false;
       }
