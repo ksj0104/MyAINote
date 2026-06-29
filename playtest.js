@@ -152,6 +152,35 @@ ok('man aireplay-ng renders --deauth and -a <BSSID>', /OPTIONS/.test(manAir) && 
 const learnGrep = win.Academy.learn('grep');
 ok('learn grep shows 옵션 section with -r', /옵션/.test(learnGrep) && learnGrep.indexOf('-r') !== -1, learnGrep);
 
+// ---------- 명령어 문제풀이(Command Drills): 모든 COMMANDS 커버 + 예시 풀이 ----------
+const D = win.CommandDrills;
+const drillTasks = D.tasks();
+ok('CommandDrills covers all commands (' + cmdNames.length + ')',
+  drillTasks.length === cmdNames.length && cmdNames.every(n => !!D.get(n)),
+  'tasks=' + drillTasks.length);
+let drillOk = true, drillErr = '';
+for (const task of drillTasks) {
+  game.appMode = 'academy';
+  game.drillSolved = new Set();
+  const intro = D.start(game, task.name);
+  if (!/COMMAND DRILL/.test(intro)) { drillOk = false; drillErr = task.name + ': failed to start'; break; }
+  for (const line of String(task.answer || '').split('\n')) {
+    if (line.trim()) game.exec(line);
+  }
+  if (!game.drillSolved.has(task.name)) {
+    drillOk = false;
+    drillErr = task.name + ' not solved by sample: ' + task.answer;
+    break;
+  }
+}
+ok('CommandDrills sample answers solve every task', drillOk, drillErr);
+game.drillSolved = new Set(['ls', 'grep']);
+game.save();
+const savedDrillRaw = JSON.parse(localStorageStub.getItem('terminal_breach_save_v1'));
+ok('save() serializes drillSolved', Array.isArray(savedDrillRaw.drill) && savedDrillRaw.drill.includes('ls') && savedDrillRaw.drill.includes('grep'));
+game.start();
+ok('start() restores drillSolved as Set', game.drillSolved && game.drillSolved.has('ls') && game.drillSolved.has('grep'));
+
 // ---------- 학습 샌드박스: 파일 읽기/쓰기 명령이 throw 하지 않아야 ----------
 game.appMode = 'academy'; game.activeSet = null;
 win.Academy.enter(game);

@@ -173,6 +173,8 @@
       t.println('  lessons          카테고리별 명령어 커리큘럼', 'objective');
       t.println('  learn <명령>     특정 명령 학습 (설명·사용법·예제)', 'objective');
       t.println('  learn all        모든 명령 요약', 'objective');
+      t.println('  drills           모든 명령 문제풀이 현황', 'objective');
+      t.println('  drill <명령>     해당 명령 문제 시작  ·  drill next 다음 문제', 'objective');
       t.println('  reset            연습실 초기화   ·   menu  메인 메뉴', 'objective');
       t.println('', '');
       t.println('그 외 모든 명령(ls, cat, grep, nmap, base64 ...)은 바로 실습된다.', 'dim');
@@ -188,6 +190,8 @@
       const cmd = parts[0].toLowerCase();
       if (cmd === 'lessons') return this.lessons();
       if (cmd === 'learn') return this.learn(parts.slice(1).join(' ').trim());
+      if (cmd === 'drills') return window.CommandDrills.status(game);
+      if (cmd === 'drill') return window.CommandDrills.handle(parts.slice(1), game);
       if (cmd === 'reset') { this.enter(game); return ''; }
       return null; // 일반 명령은 샌드박스에서 실행
     },
@@ -198,6 +202,7 @@
         out += `\n  ▸ ${name}\n      ${cmds.join('  ')}`;
       }
       out += '\n\n  팁: `learn all` 로 전체 요약, `man <명령>` 도 사용 가능.';
+      out += '\n  문제풀이: `drills` 로 현황을 보고 `drill <명령>` 또는 `drill next` 로 시작.';
       return out;
     },
 
@@ -227,6 +232,304 @@
       out += `╰───────────────────────────────────────\n`;
       out += `직접 해보기 → 연습실에서 \`${name}\` 를 입력해보라.`;
       return out;
+    }
+  };
+
+  /* =====================================================
+   *  Command Drills — 모든 명령어 문제풀이
+   * ===================================================== */
+  const SAMPLE = {
+    help: 'help',
+    man: 'man grep',
+    pwd: 'pwd',
+    ls: 'ls -la',
+    cd: 'cd /tmp',
+    cat: 'cat README.md',
+    echo: 'echo training > echo.txt',
+    grep: 'grep NEEDLE notes.log',
+    find: 'find /home/student -name target.key',
+    chmod: 'chmod +x script.sh',
+    whoami: 'whoami',
+    id: 'id',
+    su: 'su root toor',
+    sudo: 'sudo cat /root/root.txt',
+    passwd: 'passwd',
+    base64: 'base64 -d encoded.txt',
+    strings: 'strings blob.bin',
+    xxd: 'xxd blob.bin',
+    head: 'head -n 2 lines.txt',
+    tail: 'tail -n 1 lines.txt',
+    wc: 'wc -l lines.txt',
+    sort: 'sort unsorted.txt',
+    uniq: 'uniq repeated.txt',
+    ps: 'ps',
+    uname: 'uname -a',
+    clear: 'clear',
+    history: 'history',
+    ifconfig: 'ifconfig',
+    ping: 'ping devbox',
+    nmap: 'nmap -sV devbox',
+    netstat: 'netstat -tlnp',
+    ssh: 'ssh analyst@devbox opensesame',
+    john: 'john hashes.txt',
+    exit: 'exit',
+    disconnect: 'disconnect',
+    submit: 'submit DRILL-FLAG',
+    save: 'save drill',
+    load: 'load missing',
+    saves: 'saves',
+    mkdir: 'mkdir work',
+    touch: 'touch note.tmp',
+    rm: 'rm trash.tmp',
+    cp: 'cp src.txt copy.txt',
+    mv: 'mv move.txt moved.txt',
+    scp: 'scp loot.txt me@10.0.0.42:/tmp/loot.txt',
+    export: 'export TRAIN=1',
+    env: 'env',
+    top: 'top',
+    kill: 'kill 4242',
+    df: 'df -h',
+    free: 'free -h',
+    uptime: 'uptime',
+    date: 'date',
+    arp: 'arp -a',
+    route: 'route -n',
+    wget: 'wget http://drill.local/readme',
+    curl: 'curl http://drill.local/readme',
+    rot13: 'rot13 rot13.txt',
+    caesar: 'caesar 3 caesar.txt',
+    xor: 'xor xor.hex key',
+    vigenere: 'vigenere lemon vig.txt',
+    md5sum: 'md5sum src.txt',
+    hydra: 'hydra devbox ssh wordlist.txt',
+    hashcat: 'hashcat hashes.txt',
+    dump: 'dump users',
+    'airmon-ng': 'airmon-ng start wlan0',
+    'airodump-ng': 'airmon-ng start wlan0\nairodump-ng wlan0mon',
+    'aireplay-ng': 'airmon-ng start wlan0\nairodump-ng wlan0mon\naireplay-ng -0 10 -a DE:AD:C0:DE:13:37 wlan0mon',
+    'aircrack-ng': 'airmon-ng start wlan0\nairodump-ng wlan0mon\naireplay-ng -0 10 -a DE:AD:C0:DE:13:37 wlan0mon\naircrack-ng -w wordlist.txt capture-01.cap',
+    chat: 'chat 힌트',
+    reply: 'reply 확인',
+    say: 'say 준비됨',
+    channel: 'channel wraith',
+    contacts: 'contacts',
+    dig: 'dig axfr drill.local @ns.drill.local',
+    ftp: 'hydra ftpbox ftp wordlist.txt\nftp ftpbox',
+    login: "login admin ' OR '1'='1' --",
+    tcpdump: 'tcpdump -r capture.pcap Cookie',
+    nc: 'nc -lvnp 4444',
+    file: 'file package.bz2',
+    bunzip2: 'bunzip2 package.bz2',
+    gunzip: 'gunzip package.gz',
+    tar: 'tar -xvf package.tar',
+    steghide: 'steghide extract -sf cover.jpg',
+    mount: 'mount /dev/sda1 /mnt',
+    chroot: 'mount /dev/sda1 /mnt\nchroot /mnt',
+    sed: "sed -i '/10.0.0.42/d' /var/log/syslog",
+    systemctl: 'systemctl poweroff -f',
+    zip2john: 'zip2john data.zip'
+  };
+
+  function xorHex(text, key) {
+    let out = '';
+    for (let i = 0; i < text.length; i++) out += (text.charCodeAt(i) ^ key.charCodeAt(i % key.length)).toString(16).padStart(2, '0');
+    return out;
+  }
+  function vigEnc(text, key) {
+    let ki = 0;
+    return text.replace(/[a-z]/g, c => {
+      const k = key.charCodeAt(ki++ % key.length) - 97;
+      return String.fromCharCode((c.charCodeAt(0) - 97 + k) % 26 + 97);
+    });
+  }
+  function firstToken(raw) {
+    return String(raw || '').trim().split(/\s+/)[0].toLowerCase();
+  }
+  function baseDrillSetup(game) {
+    const payload = file('payload.txt', 'DRILL-PAYLOAD', 'rw-r--r--', 'student');
+    game.user = 'student'; game.host = 'drillbox'; game.cwd = '/home/student';
+    game.connStack = []; game.readFiles = new Set(); game.submitted = new Set();
+    game.scanned = new Set(); game.pinged = new Set(); game.cracked = new Set();
+    game.hydraFound = {}; game.dumped = new Set(); game.exfiltrated = new Set(); game.killed = new Set();
+    game.monitorMode = false; game.wifiScanned = false; game.handshake = null; game.wifiCracked = new Set();
+    game.dnsZoneXfer = false; game.sqliAuth = false; game.sqlDumped = false; game.sniffed = false;
+    game.ncListening = false; game.unwrapped = 0; game.stegoExtracted = false;
+    game.dockerTrap = true; game.mounted = false; game.dockerEscaped = false; game.poweredOff = false;
+    game.sudoAllowed = true; game.passwords = { root: 'toor' }; game.env = {};
+    game.knownContacts = new Set(['mother', 'wraith']); game.chatWith = 'mother';
+    game.fs = new FileSystem(dir('/', 'rwxr-xr-x', 'root', {
+      home: dir('home', 'rwxr-xr-x', 'root', {
+        student: dir('student', 'rwxr-xr-x', 'student', {
+          'README.md': file('README.md', 'DRILL-READY\nUse commands to solve each task.\n', 'rw-r--r--', 'student'),
+          'notes.log': file('notes.log', 'info boot\nNEEDLE token=drill\ninfo done\n', 'rw-r--r--', 'student'),
+          'target.key': file('target.key', 'KEY=drill', 'rw-r--r--', 'student'),
+          'script.sh': file('script.sh', '#!/bin/sh\necho ok', 'rw-r--r--', 'student'),
+          'encoded.txt': file('encoded.txt', 'ZGVjb2RlZC1zZWNyZXQ=', 'rw-r--r--', 'student'),
+          'blob.bin': file('blob.bin', '\x00\x01flag{visible_string}\x02\x03', 'rw-r--r--', 'student'),
+          'lines.txt': file('lines.txt', 'alpha\nbeta\ngamma', 'rw-r--r--', 'student'),
+          'unsorted.txt': file('unsorted.txt', 'zulu\nalpha\nkilo', 'rw-r--r--', 'student'),
+          'repeated.txt': file('repeated.txt', 'alpha\nalpha\nbeta\nbeta', 'rw-r--r--', 'student'),
+          'hashes.txt': file('hashes.txt', 'admin:hash123\n', 'rw-r--r--', 'student'),
+          'wordlist.txt': file('wordlist.txt', 'password\nopensesame\nhunter2\nwifi-pass\n', 'rw-r--r--', 'student'),
+          'src.txt': file('src.txt', 'copy source\n', 'rw-r--r--', 'student'),
+          'move.txt': file('move.txt', 'move source\n', 'rw-r--r--', 'student'),
+          'trash.tmp': file('trash.tmp', 'delete me\n', 'rw-r--r--', 'student'),
+          'loot.txt': file('loot.txt', 'exfiltrate me\n', 'rw-r--r--', 'student'),
+          'rot13.txt': file('rot13.txt', 'synt{ebg13_qevyy}', 'rw-r--r--', 'student'),
+          'caesar.txt': file('caesar.txt', 'iodj{fdhvdu_guloo}', 'rw-r--r--', 'student'),
+          'xor.hex': file('xor.hex', xorHex('flag{xor_drill}', 'key'), 'rw-r--r--', 'student'),
+          'vig.txt': file('vig.txt', vigEnc('flagvigenere', 'lemon'), 'rw-r--r--', 'student'),
+          'capture.pcap': file('capture.pcap', 'GET / HTTP/1.1\nCookie: SESSION=DRILLCOOKIE\n', 'rw-r--r--', 'student'),
+          'data.zip': Object.assign(file('data.zip', 'PK zip bytes', 'rw-r--r--', 'student'), { ziphash: '$zip2$drillhash' }),
+          'package.bz2': Object.assign(file('package.bz2', 'compressed', 'rw-r--r--', 'student'), { archive: 'bz2', next: file('package.tar', 'tar bytes', 'rw-r--r--', 'student') }),
+          'package.gz': Object.assign(file('package.gz', 'compressed', 'rw-r--r--', 'student'), { archive: 'gz', next: payload }),
+          'package.tar': Object.assign(file('package.tar', 'tar bytes', 'rw-r--r--', 'student'), { archive: 'tar', next: payload }),
+          'cover.jpg': Object.assign(file('cover.jpg', '\xff\xd8 jpeg bytes', 'rw-r--r--', 'student'), { stego: 'DRILL_STEGO=found' })
+        })
+      }),
+      root: dir('root', 'rwx------', 'root', { 'root.txt': file('root.txt', 'ROOT-DRILL\n', 'rw-------', 'root') }),
+      tmp: dir('tmp', 'rwxrwxrwx', 'root', {}),
+      var: dir('var', 'rwxr-xr-x', 'root', { log: dir('log', 'rwxr-xr-x', 'root', { syslog: file('syslog', 'ok\nbad 10.0.0.42\nok\n', 'rw-r--r--', 'root') }) }),
+      etc: dir('etc', 'rwxr-xr-x', 'root', { hostname: file('hostname', 'drillbox', 'rw-r--r--', 'root') })
+    }));
+    game.network = [
+      { name: 'devbox', ip: '10.10.0.5', ports: [{ port: 22, service: 'ssh', version: 'OpenSSH 9.1' }, { port: 8080, service: 'http', version: 'drill-http 1.0' }], creds: { analyst: 'opensesame' } },
+      { name: 'ftpbox', ip: '10.10.0.8', ports: [{ port: 21, service: 'ftp' }], creds: { analyst: 'hunter2' } }
+    ];
+    game.connections = [{ proto: 'tcp', local: '0.0.0.0:8080', state: 'LISTEN', prog: 'drill-http' }];
+    game.processes = [{ pid: 1, user: 'root', cmd: '/sbin/init' }, { pid: 4242, user: 'student', cmd: 'sleep 999' }];
+    game.crackable = { hash123: 'hunter2' };
+    game.dumps = { users: 'id | user | hash\n1 | admin | hash123' };
+    game.web = { 'http://drill.local/readme': 'DRILL WEB OK' };
+    game.dns = { records: ['drill.local. 60 IN A 10.10.0.5'], axfr: ['drill.local. 60 IN A 10.10.0.5', 'dev.drill.local. 60 IN A 10.10.0.6'] };
+    game.wifi = [{ essid: 'DRILL-WIFI', bssid: 'DE:AD:C0:DE:13:37', ch: 6, enc: 'WPA2', clients: 2, key: 'wifi-pass' }];
+    if (window.term && window.term.updatePrompt) window.term.updatePrompt();
+  }
+  const CHECKS = {
+    cd: (raw, game) => game.cwd === '/tmp',
+    cat: (raw, game, out) => /DRILL-READY/.test(out),
+    grep: (raw, game, out) => /NEEDLE/.test(out),
+    find: (raw, game, out) => /target\.key/.test(out),
+    chmod: (raw, game) => { const n = game.fs.getNode('/home/student/script.sh'); return !!(n && n.perms.indexOf('x') !== -1); },
+    su: (raw, game) => game.user === 'root',
+    sudo: (raw, game, out) => /ROOT-DRILL/.test(out),
+    base64: (raw, game, out) => /decoded-secret/.test(out),
+    strings: (raw, game, out) => /flag\{visible_string\}/.test(out),
+    head: (raw, game, out) => /^alpha\nbeta/.test(out),
+    tail: (raw, game, out) => /gamma/.test(out),
+    wc: (raw, game, out) => /\b3\b/.test(out),
+    sort: (raw, game, out) => /^alpha/.test(out),
+    uniq: (raw, game, out) => out.split('\n').length <= 3,
+    ping: (raw, game) => game.pinged && game.pinged.has('devbox'),
+    nmap: (raw, game) => game.scanned && game.scanned.has('10.10.0.5'),
+    ssh: (raw, game) => game.host === 'devbox',
+    john: (raw, game) => game.cracked && game.cracked.has('hunter2'),
+    submit: (raw, game) => game.submitted && game.submitted.has('DRILL-FLAG'),
+    mkdir: (raw, game) => !!game.fs.getNode('/home/student/work'),
+    touch: (raw, game) => !!game.fs.getNode('/home/student/note.tmp'),
+    rm: (raw, game) => !game.fs.getNode('/home/student/trash.tmp'),
+    cp: (raw, game) => !!game.fs.getNode('/home/student/copy.txt'),
+    mv: (raw, game) => !!game.fs.getNode('/home/student/moved.txt') && !game.fs.getNode('/home/student/move.txt'),
+    scp: (raw, game) => game.exfiltrated && game.exfiltrated.has('loot.txt'),
+    export: (raw, game) => game.env && game.env.TRAIN === '1',
+    kill: (raw, game) => game.killed && game.killed.has(4242),
+    rot13: (raw, game, out) => /flag\{rot13_drill\}/.test(out),
+    caesar: (raw, game, out) => /flag\{caesar_drill\}/.test(out),
+    xor: (raw, game, out) => /flag\{xor_drill\}/.test(out),
+    vigenere: (raw, game, out) => /flagvigenere/.test(out),
+    hydra: (raw, game) => game.hydraFound && game.hydraFound['10.10.0.5'],
+    hashcat: (raw, game) => game.cracked && game.cracked.has('hunter2'),
+    dump: (raw, game) => game.dumped && game.dumped.has('users'),
+    'airmon-ng': (raw, game) => game.monitorMode === true,
+    'airodump-ng': (raw, game) => game.wifiScanned === true,
+    'aireplay-ng': (raw, game) => game.handshake === 'DE:AD:C0:DE:13:37',
+    'aircrack-ng': (raw, game) => game.wifiCracked && game.wifiCracked.has('wifi-pass'),
+    dig: (raw, game) => game.dnsZoneXfer === true,
+    ftp: (raw, game) => game.host === 'ftpbox',
+    login: (raw, game) => game.sqliAuth === true,
+    tcpdump: (raw, game) => game.sniffed === true,
+    nc: (raw, game) => game.ncListening === true,
+    bunzip2: (raw, game) => game.unwrapped > 0,
+    gunzip: (raw, game) => game.unwrapped > 0,
+    tar: (raw, game) => game.unwrapped > 0,
+    steghide: (raw, game) => game.stegoExtracted === true,
+    mount: (raw, game) => game.mounted === true,
+    chroot: (raw, game) => game.dockerEscaped === true,
+    sed: (raw, game) => { const n = game.fs.getNode('/var/log/syslog'); return !!(n && !/10\.0\.0\.42/.test(n.content)); },
+    systemctl: (raw, game) => game.poweredOff === true
+  };
+  const CommandDrills = {
+    order() {
+      const names = Object.keys(window.COMMANDS || {}).sort();
+      const academy = window.Academy ? window.Academy.order : [];
+      const merged = [];
+      for (const n of academy.concat(names)) if (names.includes(n) && !merged.includes(n)) merged.push(n);
+      return merged;
+    },
+    tasks() {
+      return this.order().map(name => ({
+        name,
+        answer: SAMPLE[name] || name,
+        objective: `\`${name}\` 명령을 실제로 실행해 문제를 통과하라.`,
+        hint: SAMPLE[name] ? `권장 풀이:\n${SAMPLE[name]}` : `먼저 \`man ${name}\` 으로 사용법을 확인한 뒤 \`${name}\` 를 실행해 보라.`,
+        check: CHECKS[name] || ((raw) => firstToken(raw) === name)
+      }));
+    },
+    get(name) { return this.tasks().find(t => t.name === name); },
+    status(game) {
+      const solved = game.drillSolved || new Set();
+      const tasks = this.tasks();
+      let out = `COMMAND DRILLS: ${solved.size}/${tasks.length} solved\n`;
+      out += 'usage: drill <command>  |  drill next  |  drill hint  |  drill answer\n';
+      for (const t of tasks) out += `\n  ${solved.has(t.name) ? 'OK ' : '-- '} ${t.name.padEnd(14)} ${((window.COMMANDS[t.name] || {}).desc || '')}`;
+      return out;
+    },
+    handle(args, game) {
+      const sub = (args[0] || 'next').toLowerCase();
+      if (sub === 'status' || sub === 'list') return this.status(game);
+      if (sub === 'reset') { game.drillSolved = new Set(); game.drillActive = null; game.save && game.save(); return 'COMMAND DRILLS progress reset.'; }
+      if (sub === 'hint') {
+        const t = this.get(game.drillActive);
+        return t ? t.hint : '진행 중인 문제가 없다. `drill <명령>` 또는 `drill next` 를 입력하라.';
+      }
+      if (sub === 'answer') {
+        const t = this.get(game.drillActive);
+        return t ? `정답 예시:\n${t.answer}` : '진행 중인 문제가 없다.';
+      }
+      const name = sub === 'next' ? this.nextName(game) : sub;
+      return this.start(game, name);
+    },
+    nextName(game) {
+      const solved = game.drillSolved || new Set();
+      return (this.order().find(n => !solved.has(n)) || this.order()[0]);
+    },
+    start(game, name) {
+      const t = this.get(name);
+      if (!t) return `drill: '${name}' 문제를 찾을 수 없다. \`drills\` 로 목록을 확인하라.`;
+      baseDrillSetup(game);
+      game.appMode = 'academy';
+      game.drillActive = t.name;
+      window.term && window.term.setMission && window.term.setMission({ id: 'DRILL', tier: '학습', title: t.name, objective: t.objective }, 1, this.tasks().length);
+      return [
+        `COMMAND DRILL: ${t.name}`,
+        t.objective,
+        '',
+        '샌드박스가 새로 준비됐다. 직접 명령을 입력해 해결하라.',
+        '`drill hint` 로 힌트, `drill answer` 로 예시 풀이, `drill next` 로 다음 문제.'
+      ].join('\n');
+    },
+    afterExec(raw, game, out) {
+      const t = this.get(game.drillActive);
+      if (!t || firstToken(raw) === 'drill' || firstToken(raw) === 'drills') return '';
+      let ok = false;
+      try { ok = t.check(raw, game, String(out == null ? '' : out)); } catch (e) { ok = false; }
+      if (!ok) return '';
+      game.drillSolved = game.drillSolved || new Set();
+      game.drillSolved.add(t.name);
+      game.drillActive = null;
+      game.save && game.save();
+      const remaining = this.tasks().length - game.drillSolved.size;
+      return `\n[DRILL OK] ${t.name} 해결. 남은 문제: ${remaining}. 다음은 \`drill next\`.`;
     }
   };
 
@@ -347,5 +650,6 @@
 
   window.Modes = Modes;
   window.Academy = Academy;
+  window.CommandDrills = CommandDrills;
   window.CodeLab = CodeLab;
 })();

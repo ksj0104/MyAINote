@@ -98,7 +98,7 @@
       const solvedW = (game && game.wargameSolved && game.wargameSolved.size) || 0;
       const solvedC = (game && game.codelabSolved && game.codelabSolved.size) || 0;
       this.openModal('🧩 그 외 모드', [
-        { a: 'academy', t: '🎓 학습 (ACADEMY)', d: '명령어 튜토리얼 + 샌드박스' },
+        { a: 'academy', t: '🎓 학습 (ACADEMY)', d: '명령어 튜토리얼 + 샌드박스 + 문제풀이' },
         { a: 'codelab', t: `💻 코드랩 (CODE LAB)`, d: `JS 암호 해독 — ${solvedC}/4` },
         { a: 'wargame', t: `🚩 워게임 (WARGAME)`, d: `CTF 챌린지 — ${solvedW}/6` },
         { a: 'back', t: '◀ 뒤로', d: '세션 런처로' }

@@ -32,7 +32,7 @@
         localStorage.setItem(SAVE_KEY, JSON.stringify({
           levelIndex: this.scenarioIndex || 0, theme: this.theme,
           wargame: [...(this.wargameSolved || [])], codelab: [...(this.codelabSolved || [])],
-          academy: [...(this.academyDone || [])]
+          academy: [...(this.academyDone || [])], drill: [...(this.drillSolved || [])]
         }));
       } catch (e) {}
     }
@@ -75,6 +75,7 @@
       this.wargameSolved = new Set(saved && saved.wargame || []);
       this.codelabSolved = new Set(saved && saved.codelab || []);
       this.academyDone = new Set(saved && saved.academy || []);
+      this.drillSolved = new Set(saved && saved.drill || []);
       window.term.bootSequence(() => this.showMenu());
     }
 
@@ -399,6 +400,11 @@
         const content = (out == null ? '' : String(out)) + '\n';
         const res = this.fs.writePath(abs, content, { append: redirect.append, user: this.user });
         out = res.err ? `${name}: ${redirect.path}: ${res.err}` : '';
+      }
+
+      if (!isSub && this.appMode === 'academy' && window.CommandDrills && this.drillActive) {
+        const drillMsg = window.CommandDrills.afterExec(raw, this, out);
+        if (drillMsg) out = (out == null || out === '') ? drillMsg.trimStart() : String(out) + drillMsg;
       }
 
       if (!isSub) this.checkLevel();
