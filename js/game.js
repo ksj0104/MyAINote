@@ -33,7 +33,8 @@
           levelIndex: this.scenarioIndex || 0, theme: this.theme,
           wargame: [...(this.wargameSolved || [])], codelab: [...(this.codelabSolved || [])],
           academy: [...(this.academyDone || [])], drill: [...(this.drillSolved || [])],
-          bandit: this.banditMax || 0
+          bandit: this.banditMax || 0,
+          trace: { loc: this.traceLoc || 'home', done: [...(this.traceDone || [])] }
         }));
       } catch (e) {}
     }
@@ -78,7 +79,16 @@
       this.academyDone = new Set(saved && saved.academy || []);
       this.drillSolved = new Set(saved && saved.drill || []);
       this.banditMax = saved && Number.isInteger(saved.bandit) ? saved.bandit : 0;
-      window.term.bootSequence(() => this.showMenu());
+      const _tr = saved && saved.trace;
+      if (_tr && typeof _tr === 'object') { this.traceLoc = _tr.loc || 'home'; this.traceDone = new Set(_tr.done || []); }
+      else { this.traceLoc = 'home'; this.traceDone = new Set(); }
+      window.term.bootSequence(() => this.showScene());
+    }
+
+    showScene() {
+      this.appMode = 'scene';
+      document.body.setAttribute('data-screen', 'scene');
+      if (window.SceneManager) window.SceneManager.renderScene();
     }
 
     // 메인 타이틀 화면 (새 게임 / 이어하기 / 미션 선택 / 그 외 모드)
@@ -155,6 +165,7 @@
         case 'codelab': return this.enterCodelab();
         case 'wargame': return this.enterWargame();
         case 'bandit': return this.enterBandit();
+        case 'trace': return this.enterTrace();
         case 'back': this.showMenu(); return '';
         case 'locked': return '🔒 아직 잠긴 미션이다. 순서대로 클리어하면 열린다.';
       }
@@ -186,6 +197,7 @@
     enterAcademy() { this.appMode = 'academy'; this.activeSet = null; document.body.setAttribute('data-screen', 'play'); window.Academy.enter(this); return ''; }
     enterCodelab() { this.appMode = 'codelab'; this.activeSet = null; window.CodeLab.enter(this); return ''; }
     enterBandit() { this.appMode = 'bandit'; this.activeSet = null; document.body.setAttribute('data-screen', 'play'); window.term.hideOverlays(); window.Bandit.enter(this); return ''; }
+    enterTrace() { this.appMode = 'trace'; this.activeSet = null; document.body.setAttribute('data-screen', 'play'); window.term.hideOverlays(); window.Trace.enter(this); return ''; }
 
     enterScenario(index) {
       this.appMode = 'scenario';
@@ -355,6 +367,10 @@
           const r = window.Bandit.handle(raw, this);
           if (r !== null && r !== undefined) return r;   // submit/levels/hint 등만 가로채고 나머진 샌드박스 실행
         }
+        if (this.appMode === 'trace' && window.Trace) {
+          const r = window.Trace.handle(raw, this);
+          if (r !== null && r !== undefined) return r;   // submit/episodes/hint 등만 가로채고 나머진 샌드박스 실행
+        }
       }
 
       const pipeParts = this.splitTopLevel(raw, '|');
@@ -521,6 +537,7 @@
     }
 
     checkLevel() {
+      if (this.appMode === 'trace' && window.Trace) { window.Trace.tick(this); return; }
       if (this.cleared) return;
       if (this.appMode !== 'scenario' && !(this.appMode === 'wargame' && this.challengeLoaded)) return;
       const lvl = (this.activeSet || window.LEVELS)[this.levelIndex];

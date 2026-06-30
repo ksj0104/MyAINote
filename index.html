@@ -16,6 +16,23 @@
     <!-- ░░ 부팅 화면 ░░ -->
     <div id="boot-screen"><pre id="boot-log"></pre></div>
 
+    <!-- ░░ 상호작용 씬 레이어 ░░ -->
+    <div id="scene-layer">
+      <div id="scene-container">
+        <!-- JS가 여기에 이미지와 히트박스를 주입합니다. -->
+      </div>
+    </div>
+
+    <!-- ░░ 맵(지도) 모달 ░░ -->
+    <div id="map-modal" class="modal-overlay" hidden>
+      <div class="modal" style="width: 400px;">
+        <div class="modal-titlebar"><span class="mt-title">◈ 내비게이션(Map)</span><button class="mt-x" onclick="document.getElementById('map-modal').hidden=true">✕</button></div>
+        <div class="modal-body" id="map-locations" style="padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+          <!-- 맵 목적지 리스트 -->
+        </div>
+      </div>
+    </div>
+
     <!-- ░░ 바탕화면 ░░ -->
     <div id="desktop">
       <div id="wallpaper"></div>
@@ -165,6 +182,10 @@
   <script src="js/comms.js"></script>
   <script src="js/game.js"></script>
   <script src="js/bandit.js"></script>
+  <script src="js/trace.js"></script>
+  <script src="js/room.js"></script>
+  <script src="js/dialogue.js"></script>
+  <script src="js/scene.js"></script>
   <!-- NULLSEC OS 셸 -->
   <script src="js/os/window-manager.js"></script>
   <script src="js/apps/terminal-app.js"></script>

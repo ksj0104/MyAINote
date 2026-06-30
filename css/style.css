@@ -40,7 +40,8 @@ body[data-theme="cyan"]  { --signal: #3fe0ea; --signal-soft: #9bf2f7; --glow: rg
 * { box-sizing: border-box; }
 html, body {
   margin: 0; height: 100%;
-  background: #000;
+  background: #000 url('../imgs/bg_lofi.png') no-repeat center center fixed;
+  background-size: cover;
   font-family: 'Chakra Petch', 'Segoe UI', sans-serif;
   color: var(--label);
   overflow: hidden;
@@ -52,7 +53,7 @@ button { font-family: inherit; }
 .crt {
   position: relative; height: 100vh; padding: 12px;
   background:
-    radial-gradient(120% 90% at 50% 0%, #0d141b 0%, var(--void) 60%, #000 100%);
+    radial-gradient(120% 90% at 50% 0%, rgba(13,20,27,0.7) 0%, rgba(7,13,19,0.75) 60%, rgba(0,0,0,0.85) 100%);
   animation: flicker 6s infinite steps(60);
 }
 #deck {
@@ -491,7 +492,7 @@ body[data-overlay="codelab"] #workspace, body[data-overlay="codelab"] #status-ba
  * ░░░ NULLSEC OS — 데스크톱 셸 (신규 레이어) ░░░
  * ============================================================ */
 #os { position: fixed; inset: 0; display: flex; flex-direction: column;
-  background: radial-gradient(130% 100% at 50% 0%, #0c1620 0%, var(--void) 55%, #000 100%); }
+  background: radial-gradient(130% 100% at 50% 0%, rgba(12,22,32,0.7) 0%, rgba(7,13,19,0.75) 55%, rgba(0,0,0,0.85) 100%); }
 
 /* 부팅 */
 #boot-screen { display: none; flex: 1; align-items: flex-start; justify-content: center; padding: 4vh 20px; overflow: hidden; }
@@ -501,7 +502,68 @@ body[data-screen="boot"] #boot-screen { display: flex; }
 body[data-screen="boot"] #desktop, body[data-screen="boot"] #taskbar { display: none; }
 
 /* 바탕화면 */
-#desktop { position: relative; flex: 1; overflow: hidden; }
+#desktop { position: relative; flex: 1; overflow: hidden; display: none; }
+body[data-screen="os"] #desktop, body[data-screen="os"] #taskbar { display: flex; }
+
+/* ── 씬(Scene) 모드 ── */
+#scene-layer { display: none; flex: 1; position: relative; background: #000; overflow: hidden; align-items: center; justify-content: center; }
+body[data-screen="scene"] #scene-layer { display: flex; }
+body[data-screen="scene"] #desktop, body[data-screen="scene"] #taskbar { display: none; }
+
+#scene-container { position: relative; display: inline-block; max-width: 100%; max-height: 100vh; }
+#scene-bg { display: block; max-width: 100%; max-height: 100vh; object-fit: contain; }
+
+/* 상호작용 히트박스 */
+.hitbox {
+  position: absolute;
+  background: rgba(63, 224, 234, 0.1);
+  border: 1px dashed rgba(63, 224, 234, 0.5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  border-radius: 4px;
+}
+.hitbox span {
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 700; font-size: 14px; color: var(--void);
+  background: var(--signal); padding: 4px 8px; border-radius: 2px;
+  opacity: 0; transform: translateY(10px); transition: all 0.2s; pointer-events: none;
+}
+.hitbox:hover {
+  background: rgba(63, 224, 234, 0.3);
+  border: 1px solid var(--signal);
+  box-shadow: 0 0 15px var(--glow);
+}
+.hitbox:hover span { opacity: 1; transform: translateY(0); }
+
+/* 지도 목적지 버튼 */
+.map-btn {
+  display: flex; flex-direction: column; gap: 4px; padding: 12px; cursor: pointer; text-align: left;
+  background: var(--deck-2); border: 1px solid var(--steel-dim); color: var(--label);
+  transition: all 0.1s;
+}
+.map-btn:hover { border-color: var(--signal); background: rgba(63,224,234,.1); }
+.map-title { font-family: 'Chakra Petch'; font-size: 14px; font-weight: 700; color: var(--signal-soft); }
+.map-desc { font-size: 12px; color: var(--label-dim); }
+
+/* ░░ 하단 대화/혼잣말 창 ░░ */
+#dialogue-box {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 100060; cursor: pointer;
+  background: linear-gradient(180deg, rgba(6,10,16,.6), rgba(6,10,16,.97));
+  border-top: 1px solid var(--signal); box-shadow: 0 -6px 26px rgba(63,224,234,.18);
+  padding: 14px 18px 18px; font-family: 'VT323', monospace;
+}
+#dialogue-box[hidden] { display: none; }
+.dlg-inner { max-width: 1000px; margin: 0 auto; position: relative; min-height: 52px; }
+.dlg-name {
+  font-family: 'Chakra Petch'; font-weight: 700; font-size: 14px; color: var(--void);
+  background: var(--signal); padding: 2px 10px; border-radius: 3px; margin-bottom: 8px; display: inline-block;
+}
+.dlg-text { font-size: 21px; line-height: 1.5; color: var(--story); white-space: pre-wrap; }
+.dlg-cont { position: absolute; right: 2px; bottom: -2px; color: var(--signal); animation: dlgblink 1s steps(2) infinite; }
+@keyframes dlgblink { 50% { opacity: 0; } }
 #wallpaper { position: absolute; inset: 0;
   background-image:
     radial-gradient(60% 50% at 80% 15%, rgba(63,224,234,.07), transparent 60%),
@@ -692,6 +754,64 @@ body[data-screen="play"] #mission-widget { display: flex; }
 #codelab { z-index: 100002; }
 
 @keyframes flashbg { 0% { background: rgba(63,224,234,.18); } 100% { background: var(--void); } }
+
+/* ░░ TRACE//CALL 방(씬) 오버레이 ░░ */
+#room {
+  display: none; position: fixed; inset: 0; z-index: 100002;
+  background: radial-gradient(circle at 50% 30%, #0b1622, var(--void));
+  flex-direction: column; align-items: center; padding: 10px 14px; gap: 10px; overflow: auto;
+}
+.room-head { width: 100%; max-width: 880px; display: flex; align-items: center; gap: 12px; font-family: 'Chakra Petch'; color: var(--signal); }
+.room-title { font-weight: 700; font-size: 20px; letter-spacing: 1px; }
+.room-sub { font-family: 'VT323', monospace; color: var(--label-dim); }
+.room-head .hud-btn { margin-left: auto; }
+.room-stage {
+  position: relative; width: 100%; max-width: 760px; aspect-ratio: 200 / 120;
+  border: 1px solid var(--signal); border-radius: 6px; overflow: hidden;
+  box-shadow: 0 0 24px rgba(63,224,234,.16); background: #05080c;
+}
+.room-canvas {
+  display: block; width: 100%; height: 100%;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+}
+.room-hot {
+  position: absolute; background: transparent; border: 1px dashed transparent;
+  cursor: pointer; padding: 0; border-radius: 3px;
+}
+.room-hot:hover { border-color: var(--signal); background: rgba(63,224,234,.14); box-shadow: 0 0 12px rgba(63,224,234,.4); }
+.room-hot .hot-label {
+  position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%);
+  white-space: nowrap; font-family: 'Chakra Petch'; font-weight: 700; font-size: 12px;
+  color: var(--void); background: var(--signal); padding: 2px 7px; border-radius: 3px;
+  opacity: 0; transition: opacity .12s; pointer-events: none; margin-bottom: 3px;
+}
+.room-hot:hover .hot-label { opacity: 1; }
+.room-panel {
+  width: 100%; max-width: 880px; min-height: 96px;
+  border: 1px solid var(--steel-dim); border-radius: 6px; background: rgba(0,0,0,.55);
+  padding: 12px 14px; font-family: 'VT323', monospace; font-size: 17px; color: var(--story);
+}
+.room-say b { color: var(--signal); }
+.rp-foot { color: var(--label-dim); font-size: 14px; }
+.room-phone .rp-top, .room-map .rp-top { color: var(--signal); font-family: 'Chakra Petch'; font-weight: 700; margin-bottom: 8px; }
+.rp-msg { border-left: 2px solid var(--steel); padding: 3px 8px; margin: 4px 0; color: var(--label); }
+.room-map { display: flex; flex-direction: column; gap: 6px; }
+.room-go {
+  text-align: left; background: rgba(63,224,234,.06); border: 1px solid var(--steel-dim);
+  color: var(--label); font-family: 'VT323', monospace; font-size: 16px; padding: 8px 12px; cursor: pointer; border-radius: 4px;
+}
+.room-go.open { color: var(--signal-soft); border-color: var(--signal); }
+.room-go.here { color: var(--signal); border-left: 3px solid var(--signal); cursor: default; }
+.room-go.done { color: var(--ok); }
+.room-go.locked { color: var(--label-dim); cursor: not-allowed; }
+.room-go.open:hover { background: var(--signal); color: var(--void); }
+.room-return {
+  position: fixed; left: 12px; top: 10px; z-index: 100003;
+  background: var(--signal); color: var(--void); border: none; border-radius: 6px;
+  font-family: 'Chakra Petch'; font-weight: 700; font-size: 14px; padding: 8px 14px; cursor: pointer;
+  box-shadow: 0 0 14px rgba(63,224,234,.5);
+}
+@media (max-height: 720px) { .room-art { font-size: 14px; } .room-obj { padding: 9px 14px; } }
 
 /* ░░ 시각 학습 오버레이 (ACADEMY) ░░ */
 #academy {

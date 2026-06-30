@@ -82,7 +82,9 @@
       const total = (window.LEVELS || []).length;
       const acts = $('#launcher-actions');
       if (acts) {
+        const tp = (window.Trace && window.Trace.progress) ? window.Trace.progress(game) : { cleared: 0, total: 0 };
         const btns = [
+          { a: 'trace', t: '📞 메인 스토리 (TRACE//CALL)', d: tp.cleared > 0 ? `이어하기 — ${tp.cleared}/${tp.total} 장소` : '새 사건 — 부모님의 전화' },
           { a: 'newgame', t: '▶ 새 게임', d: '처음부터 (S1.01)' },
           { a: 'continue', t: '⏵ 이어하기', d: scenIdx > 0 ? `${scenIdx + 1}/${total} 미션부터` : '저장 없음', dim: scenIdx <= 0 },
           { a: 'missions', t: '🗂 미션 선택', d: '지난 미션 복습' },

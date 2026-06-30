@@ -39,7 +39,7 @@ vm.createContext(ctx);
 
 const root = __dirname;
 // 셸/UI(terminal·os·apps)는 DOM 의존이라 로드 안 함 — win.term 은 아래 Proxy 스텁으로 대체
-for (const f of ['filesystem', 'commands', 'levels', 'wargames', 'modes', 'comms', 'game', 'bandit']) {
+for (const f of ['filesystem', 'commands', 'levels', 'wargames', 'modes', 'comms', 'game', 'bandit', 'trace', 'room']) {
   vm.runInContext(fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8'), ctx, { filename: f + '.js' });
 }
 
@@ -425,6 +425,70 @@ for (let i = 0; i < BANDIT_SOL.length; i++) {
 ok('Bandit: 12레벨 모두 의도한 명령으로 풀려 순서대로 해제', banditOk && game.banditMax === 12, banditErr);
 ok('Bandit: 틀린 비번은 거부', /틀렸다/.test(win.Bandit.handle('submit WRONG', (game.banditAt = 0, game)) || ''));
 ok('Bandit: 잠긴 레벨 이동 거부', (game.banditMax = 0, /잠겨/.test(win.Bandit.goto(game, 5) || '')));
+
+// ---------- TRACE//CALL: 장소(맵) 기반 메인 스토리 ----------
+ok('Trace 모듈 + 4장소(home/neighbor/den/helios)', !!win.Trace && win.Trace.ORDER.length === 4 && win.Trace.ORDER.every(id => win.Trace.LOCATIONS[id]));
+ok('Trace 장소마다 setup/tasks(trigger), 비트마다 objective',
+  win.Trace.ORDER.every(id => { const L = win.Trace.LOCATIONS[id]; return typeof L.setup === 'function' && Array.isArray(L.tasks) && L.tasks.length && L.tasks.every(t => typeof t.trigger === 'function' && typeof t.objective === 'string'); }));
+
+game.appMode = 'trace';
+game.traceLoc = 'home'; game.traceDone = new Set();
+win.Trace.enter(game);
+let traceOk = true, traceErr = '';
+function tStep(label, cmd) { game.exec(cmd); }            // exec 끝 checkLevel→tick 이 진행 판정
+function tGo(q) { return win.Trace.handle('go ' + q, game); }
+
+// 잠금: 집을 끝내기 전엔 근거지로 못 감
+const lockedTry = win.Trace.handle('go 근거지', game);
+ok('Trace: 미해금 장소 이동 거부', /갈 수 없|잠김|🔒/.test(lockedTry || ''));
+
+// HOME(집) — ~10비트 조사 (cat/curl 행동만으로 진행, submit 없음)
+tStep('h1', 'cat sms.txt');
+tStep('h2', 'curl http://kb-secure-check.com');
+tStep('h3', 'curl http://kb-secure-check.com/api/v2/collect');
+tStep('h4', 'cat call_rec.txt');
+tStep('h5', 'cat bank.csv');
+tStep('h6', 'cat enc.cfg');
+tStep('h7', 'curl http://intel.kr-osint.net/kb-secure-check.com');
+tStep('h8', 'curl http://pasternal.io/raw/sv-q3');
+tStep('h9', 'cat evidence.tar');
+tStep('h10', 'curl http://ops-panel.kr-relay.net');
+ok('Trace HOME: 집 10비트 모두 행동으로 클리어', win.Trace.LOCATIONS.home.tasks.length >= 10 && win.Trace.LOCATIONS.home.tasks.every(t => game.traceDone.has(t.id)), [...game.traceDone].filter(x => /^h\d/.test(x)).join(','));
+
+// 이웃집 이동 후: 증거 읽기 → 운영 콘솔 접속
+tGo('이웃집');
+ok('Trace: 집 정리 후 이웃집 이동됨', game.traceLoc === 'neighbor');
+tStep('n1', 'cat guide.txt');
+tStep('n2', 'curl http://ops-panel.kr-relay.net');
+ok('Trace NEIGHBOR: 2비트 클리어', win.Trace.LOCATIONS.neighbor.tasks.every(t => game.traceDone.has(t.id)));
+
+// 근거지 이동: nmap 정찰 → 명단 확보
+tGo('근거지');
+ok('Trace: 근거지 이동됨', game.traceLoc === 'den');
+tStep('d1', 'nmap 10.13.37.0/24');
+ok('Trace DEN d1: nmap 으로 scanned 채워짐', game.scanned && game.scanned.size > 0);
+tStep('d2', 'cat /mnt/ops/victims.csv');
+ok('Trace DEN: 정찰+명단 확보 2비트 클리어', win.Trace.LOCATIONS.den.tasks.every(t => game.traceDone.has(t.id)));
+
+// HELIOS 이동: 스테이징 .env → SILVERNET 모델
+tGo('회사');
+ok('Trace: HELIOS 본사 이동됨', game.traceLoc === 'helios');
+tStep('x1', 'curl http://staging.helios.corp/.env');
+tStep('x2', 'cat silvernet_scoring.txt');
+ok('Trace HELIOS: 2비트 클리어', win.Trace.LOCATIONS.helios.tasks.every(t => game.traceDone.has(t.id)));
+
+ok('Trace: 전 장소 정리 완료 (4/4)', win.Trace.progress(game).cleared === 4, JSON.stringify(win.Trace.progress(game)));
+ok('Trace: submit 은 게이트가 아니라 안내로 응답', /정답 제출이 없다/.test(win.Trace.handle('submit x', game) || ''));
+ok('Trace: curl 이 game.visited 에 방문 URL 기록', (() => { game.visited = new Set(); game.web = { 'http://x.test': 'ok' }; game.exec('curl http://x.test'); return game.visited.has('http://x.test'); })());
+
+// ---------- ROOM: 방(씬) 레이어 ----------
+ok('Room 모듈 + 4장소 픽셀 씬(SCENES)/objects', !!win.Room && win.Trace.ORDER.every(id => typeof win.Room.SCENES[id] === 'function' && win.Room.ROOMS[id] && Array.isArray(win.Room.ROOMS[id].objects)));
+ok('Room: 집 방에 컴퓨터·핸드폰·동료·문 오브젝트', ['computer', 'phone', 'npc', 'door'].every(o => win.Room.ROOMS.home.objects.includes(o)) && !!win.Room.ROOMS.home.npc && Array.isArray(win.Room.ROOMS.home.phone));
+let roomThrew = false, roomErr = '';
+try { game.traceLoc = 'home'; game.traceDone = new Set(); win.Trace.setLoc(game, 'home'); win.Room.enter('home', {}); win.Room.usePhone(win.Room.ROOMS.home); win.Room.talkNpc(win.Room.ROOMS.home); win.Room.useDoor('home'); } catch (e) { roomThrew = true; roomErr = e.message; }
+ok('Room: 집 진입/핸드폰/대화/문 상호작용이 throw 없이 동작', !roomThrew, roomErr);
+ok('Room: 잠긴 장소 이동은 무시(집 미정리 시 den 불가)', (() => { game.traceLoc = 'home'; game.traceDone = new Set(); win.Room.travel('den'); return game.traceLoc === 'home'; })());
+ok('Room: 컴퓨터 사용 = Trace.openComputer 위임(throw 없음)', (() => { try { win.Trace.setLoc(game, 'home'); win.Room.useComputer('home'); return true; } catch (e) { return false; } })());
 
 // ---------- 보고 ----------
 console.log(results.join('\n'));

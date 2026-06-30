@@ -757,7 +757,9 @@ reg('curl', 'HTTP 요청(시뮬)', 'curl <url>', ({ args, game }) => {
     if (t) { game.connect && game.connect(t, t.shellUser || 'www-data'); game.onSshSuccess && game.onSshSuccess(t, 'www-data'); }
     return '[*] 백도어 실행 → 리버스 셸 연결 성립! HELIOS 내부망 거점 확보.';
   }
-  return (game.web && (game.web[url] || game.web[args[0]])) || `curl: (6) Could not resolve host: ${url}`;
+  const page = game.web && (game.web[url] || game.web[args[0]]);
+  if (page != null) { game.visited = game.visited || new Set(); game.visited.add(url); return page; }
+  return `curl: (6) Could not resolve host: ${url}`;
 });
 
 /* ---------- 암호화/복호화 ---------- */
